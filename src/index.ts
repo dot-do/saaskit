@@ -6,7 +6,7 @@
  *
  * @example
  * ```tsx
- * import { defineApp, $ } from 'saaskit'
+ * import { defineApp, $, SaaS, SaaSProvider } from 'saaskit'
  *
  * const app = defineApp({
  *   do: 'https://api.your-app.do',
@@ -35,6 +35,15 @@
  *     WeeklyCleanup: $.every.sunday.at('3am'),
  *   },
  * })
+ *
+ * // Render the admin UI
+ * function App() {
+ *   return (
+ *     <SaaSProvider app={app}>
+ *       <SaaS app={app} />
+ *     </SaaSProvider>
+ *   )
+ * }
  * ```
  *
  * @packageDocumentation
@@ -42,6 +51,93 @@
 
 // Core
 export { defineApp, $ } from './core'
+
+// Components
+export { SaaS, SaaSAdmin } from './components'
+export type { SaaSProps, ResourceConfig } from './components'
+
+// Built-in pages
+export {
+  OrganizationsPage,
+  UsersPage,
+  TeamsPage,
+  APIKeysPage,
+  WebhooksPage,
+  BillingPage,
+  AuditLogPage,
+  SettingsPage,
+} from './components'
+export type {
+  // Organizations
+  Organization,
+  OrganizationsPageProps,
+  // Users
+  User,
+  UsersPageProps,
+  // Teams
+  Team,
+  TeamMember,
+  TeamsPageProps,
+  // API Keys
+  APIKey,
+  APIKeysPageProps,
+  // Webhooks
+  Webhook,
+  WebhookDelivery,
+  WebhooksPageProps,
+  // Billing
+  Subscription,
+  Plan,
+  Invoice,
+  PaymentMethod,
+  UsageRecord,
+  BillingPageProps,
+  // Audit Log
+  AuditLogEntry,
+  AuditLogFilters,
+  AuditLogPageProps,
+  // Settings
+  AppSettings,
+  SettingsPageProps,
+} from './components'
+
+// Providers
+export {
+  AppProvider,
+  SaaSProvider,
+  useApp,
+  useSaaS,
+  useAppContext,
+} from './providers'
+export type {
+  AppContextValue,
+  AppProviderProps,
+  AuthConfig,
+  RealtimeConfig,
+  SaaSContextValue,
+  SaaSProviderProps,
+} from './providers'
+
+// Hooks
+export {
+  useResource,
+  useRealtime,
+  useAuth,
+  usePermission,
+  useOrganization,
+} from './hooks'
+export type {
+  ResourceData,
+  ResourceMutations,
+  UseResourceOptions,
+  RealtimeStatus,
+  RealtimeEvent,
+  UseRealtimeOptions,
+  UseRealtimeResult,
+  AuthUser,
+  AuthState,
+  AuthActions,
+} from './hooks'
 
 // Types - re-export everything
 export type {
