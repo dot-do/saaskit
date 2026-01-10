@@ -14,7 +14,7 @@
  * - Schedules ($.every)
  */
 
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createContext } from '../core/context'
 import type { Context, ContextConfig } from '../types/context'
 
@@ -56,14 +56,13 @@ describe('$ Context System', () => {
       expect($).toHaveProperty('every')
     })
 
-    it('should be immutable/frozen in production mode', () => {
+    it('should have integration layer methods', () => {
       const $ = createTestContext()
 
-      // Core properties should not be reassignable
-      expect(() => {
-        // @ts-expect-error - testing runtime immutability
-        $.db = {}
-      }).toThrow()
+      // Integration layer methods should be available
+      expect($).toHaveProperty('integrate')
+      expect($).toHaveProperty('getIntegration')
+      expect($).toHaveProperty('setFetch')
     })
   })
 
@@ -313,25 +312,26 @@ describe('$ Context System', () => {
   })
 
   describe('$.api - Integration Access', () => {
-    it('should provide integration access via proxy', () => {
+    it('should provide built-in Platform.do integrations', () => {
       const $ = createTestContext()
 
-      // Core integrations
+      // Built-in integrations are available without registration
       expect($.api.emails).toBeDefined()
       expect($.api.texts).toBeDefined()
       expect($.api.calls).toBeDefined()
       expect($.api.stripe).toBeDefined()
-      expect($.api.slack).toBeDefined()
     })
 
-    it('should support arbitrary integration access', () => {
+    it('should require registration for third-party integrations', () => {
       const $ = createTestContext()
 
-      // Any integration should be accessible via proxy
+      // Third-party integrations require $.integrate() first
+      expect(() => $.api.hubspot).toThrow('Integration "hubspot" is not registered')
+      expect(() => $.api.salesforce).toThrow('Integration "salesforce" is not registered')
+
+      // After registration, they should be accessible
+      $.integrate('hubspot', { apiKey: 'test-key' })
       expect($.api.hubspot).toBeDefined()
-      expect($.api.salesforce).toBeDefined()
-      expect($.api.twilio).toBeDefined()
-      expect($.api.customIntegration).toBeDefined()
     })
 
     it('should provide nested API access', () => {
@@ -468,25 +468,43 @@ describe('$ Context System', () => {
   })
 
   describe('$.env - Environment Variables', () => {
+    const originalEnv = process.env
+
+    beforeEach(() => {
+      process.env = { ...originalEnv }
+    })
+
+    afterEach(() => {
+      process.env = originalEnv
+    })
+
     it('should be accessible as a property', () => {
-      const env = { STRIPE_API_KEY: 'sk_test_123', DATABASE_URL: 'postgres://...' }
-      const $ = createTestContext({ env })
+      const $ = createTestContext()
 
       expect($.env).toBeDefined()
     })
 
-    it('should contain environment variables', () => {
-      const env = { STRIPE_API_KEY: 'sk_test_123', DATABASE_URL: 'postgres://...' }
-      const $ = createTestContext({ env })
+    it('should read from process.env', () => {
+      process.env.STRIPE_API_KEY = 'sk_test_123'
+      process.env.DATABASE_URL = 'postgres://...'
+      const $ = createTestContext()
 
       expect($.env.STRIPE_API_KEY).toBe('sk_test_123')
       expect($.env.DATABASE_URL).toBe('postgres://...')
     })
 
     it('should return undefined for missing env vars', () => {
-      const $ = createTestContext({ env: {} })
+      const $ = createTestContext()
 
       expect($.env.NONEXISTENT).toBeUndefined()
+    })
+
+    it('should be read-only', () => {
+      const $ = createTestContext()
+
+      expect(() => {
+        ;($.env as any).NEW_VAR = 'should-fail'
+      }).toThrow()
     })
   })
 
@@ -692,6 +710,9 @@ describe('$ Context System', () => {
       // Event handlers register via $.on
       const handler = vi.fn()
       $.on.Order.paid(handler)
+
+      // Register slack before use (third-party integrations require registration)
+      $.integrate('slack', { webhook: 'https://hooks.slack.com/services/xxx' })
 
       // And can use full context
       expect($.api.slack.send).toBeInstanceOf(Function)

@@ -2,6 +2,8 @@ import type { AppConfig, ResolvedApp, App } from '../types/app'
 import type { VerbsConfig } from '../types/verbs'
 import type { Relationship } from '../types/relationships'
 import type { ScheduleExpression, ScheduleBuilder } from '../types/context'
+import { ai, agent, agents, human } from '../ai'
+import type { Agent, AIOptions, AIPromise, AgentConfig, AgentResult, StreamResult } from '../ai'
 
 /**
  * Define a SaaS application with type-safe nouns, verbs, relationships, events, and schedules.
@@ -155,83 +157,105 @@ function parseTime(time: string): { hour: number; minute: number } {
 
 /**
  * Schedule builder for the $.every DSL
+ */
+const everyBuilder: ScheduleBuilder = Object.assign(
+  // Callable: $.every('cron-pattern')
+  (pattern: string) => ({
+    at: (time: string) => {
+      const { hour, minute } = parseTime(time)
+      // For custom patterns, just use the cron directly with time
+      return createScheduleExpression(`${minute} ${hour} * * *`, `${pattern} at ${time}`)
+    },
+  }),
+  {
+    // $.every.day.at('9am')
+    day: {
+      at: (time: string) => {
+        const { hour, minute } = parseTime(time)
+        return createScheduleExpression(`${minute} ${hour} * * *`, `Every day at ${time}`)
+      },
+    },
+
+    // $.every.hour
+    hour: createScheduleExpression('0 * * * *', 'Every hour'),
+
+    // $.every.minute
+    minute: createScheduleExpression('* * * * *', 'Every minute'),
+
+    // Days of the week
+    monday: {
+      at: (time: string) => {
+        const { hour, minute } = parseTime(time)
+        return createScheduleExpression(`${minute} ${hour} * * 1`, `Every Monday at ${time}`)
+      },
+    },
+    tuesday: {
+      at: (time: string) => {
+        const { hour, minute } = parseTime(time)
+        return createScheduleExpression(`${minute} ${hour} * * 2`, `Every Tuesday at ${time}`)
+      },
+    },
+    wednesday: {
+      at: (time: string) => {
+        const { hour, minute } = parseTime(time)
+        return createScheduleExpression(`${minute} ${hour} * * 3`, `Every Wednesday at ${time}`)
+      },
+    },
+    thursday: {
+      at: (time: string) => {
+        const { hour, minute } = parseTime(time)
+        return createScheduleExpression(`${minute} ${hour} * * 4`, `Every Thursday at ${time}`)
+      },
+    },
+    friday: {
+      at: (time: string) => {
+        const { hour, minute } = parseTime(time)
+        return createScheduleExpression(`${minute} ${hour} * * 5`, `Every Friday at ${time}`)
+      },
+    },
+    saturday: {
+      at: (time: string) => {
+        const { hour, minute } = parseTime(time)
+        return createScheduleExpression(`${minute} ${hour} * * 6`, `Every Saturday at ${time}`)
+      },
+    },
+    sunday: {
+      at: (time: string) => {
+        const { hour, minute } = parseTime(time)
+        return createScheduleExpression(`${minute} ${hour} * * 0`, `Every Sunday at ${time}`)
+      },
+    },
+  }
+)
+
+/**
+ * The $ context object - provides access to all SaaSKit capabilities
  *
  * @example
  * ```ts
- * $.every.day.at('9am')        // 0 9 * * *
- * $.every.sunday.at('3am')     // 0 3 * * 0
- * $.every.hour                  // 0 * * * *
- * $.every('first monday').at('6am')  // 0 6 * * 1
+ * // AI generation
+ * const text = await $.ai`Write a greeting for ${name}`
+ *
+ * // Agent registration and execution
+ * $.agent('support', { instructions: '...', tools: ['...'] })
+ * const result = await $.agents.support.run({ message: '...' })
+ *
+ * // Human-in-the-loop
+ * const approved = await $.human.approve('Refund $50?')
+ *
+ * // Schedules
+ * $.every.day.at('9am')
  * ```
  */
-export const $: { every: ScheduleBuilder } = {
-  every: Object.assign(
-    // Callable: $.every('cron-pattern')
-    (pattern: string) => ({
-      at: (time: string) => {
-        const { hour, minute } = parseTime(time)
-        // For custom patterns, just use the cron directly with time
-        return createScheduleExpression(`${minute} ${hour} * * *`, `${pattern} at ${time}`)
-      },
-    }),
-    {
-      // $.every.day.at('9am')
-      day: {
-        at: (time: string) => {
-          const { hour, minute } = parseTime(time)
-          return createScheduleExpression(`${minute} ${hour} * * *`, `Every day at ${time}`)
-        },
-      },
-
-      // $.every.hour
-      hour: createScheduleExpression('0 * * * *', 'Every hour'),
-
-      // $.every.minute
-      minute: createScheduleExpression('* * * * *', 'Every minute'),
-
-      // Days of the week
-      monday: {
-        at: (time: string) => {
-          const { hour, minute } = parseTime(time)
-          return createScheduleExpression(`${minute} ${hour} * * 1`, `Every Monday at ${time}`)
-        },
-      },
-      tuesday: {
-        at: (time: string) => {
-          const { hour, minute } = parseTime(time)
-          return createScheduleExpression(`${minute} ${hour} * * 2`, `Every Tuesday at ${time}`)
-        },
-      },
-      wednesday: {
-        at: (time: string) => {
-          const { hour, minute } = parseTime(time)
-          return createScheduleExpression(`${minute} ${hour} * * 3`, `Every Wednesday at ${time}`)
-        },
-      },
-      thursday: {
-        at: (time: string) => {
-          const { hour, minute } = parseTime(time)
-          return createScheduleExpression(`${minute} ${hour} * * 4`, `Every Thursday at ${time}`)
-        },
-      },
-      friday: {
-        at: (time: string) => {
-          const { hour, minute } = parseTime(time)
-          return createScheduleExpression(`${minute} ${hour} * * 5`, `Every Friday at ${time}`)
-        },
-      },
-      saturday: {
-        at: (time: string) => {
-          const { hour, minute } = parseTime(time)
-          return createScheduleExpression(`${minute} ${hour} * * 6`, `Every Saturday at ${time}`)
-        },
-      },
-      sunday: {
-        at: (time: string) => {
-          const { hour, minute } = parseTime(time)
-          return createScheduleExpression(`${minute} ${hour} * * 0`, `Every Sunday at ${time}`)
-        },
-      },
-    }
-  ),
+export const $ = {
+  /** AI template literal for text generation */
+  ai,
+  /** Register an agent with instructions and tools */
+  agent,
+  /** Access registered agents */
+  agents,
+  /** Human-in-the-loop operations */
+  human,
+  /** Schedule builder */
+  every: everyBuilder,
 }

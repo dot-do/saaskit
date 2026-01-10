@@ -1,4 +1,123 @@
 /**
+ * Configuration for creating a $ context
+ */
+export interface ContextConfig {
+  /** Available nouns for database operations */
+  nouns?: string[]
+  /** Verb definitions per noun */
+  verbs?: Record<string, string[]>
+  /** Input payload for verb handlers */
+  input?: Record<string, unknown>
+  /** Current record being operated on */
+  record?: Record<string, unknown>
+  /** Current record ID */
+  id?: string
+  /** Authenticated user */
+  user?: { id: string; email: string; role?: string; [key: string]: unknown }
+  /** Current organization */
+  org?: { id: string; name: string; plan?: string; [key: string]: unknown }
+  /** Environment variables */
+  env?: Record<string, string | undefined>
+}
+
+/**
+ * Noun accessor for database operations
+ */
+export interface NounAccessor {
+  create: (data: Record<string, unknown>) => Promise<Record<string, unknown>>
+  get: (id: string) => Promise<Record<string, unknown> | null>
+  update: (id: string, data: Record<string, unknown>) => Promise<Record<string, unknown>>
+  delete: (id: string) => Promise<void>
+  list: (options?: Record<string, unknown>) => Promise<Record<string, unknown>[]>
+  find: (query: Record<string, unknown>) => Promise<Record<string, unknown>[]>
+  search: (query: string) => Promise<Record<string, unknown>[]>
+  semanticSearch: (query: string) => Promise<Record<string, unknown>[]>
+}
+
+/**
+ * Agent definition for $.agents
+ */
+export interface AgentDefinition {
+  instructions: string
+  tools: string[]
+}
+
+/**
+ * Time helpers for $.time
+ */
+export interface TimeHelpers {
+  now: () => Date
+  daysAgo: (days: number) => Date
+  daysFromNow: (days: number) => Date
+  hoursAgo: (hours: number) => Date
+  startOfDay: () => Date
+  endOfDay: () => Date
+}
+
+/**
+ * Human-in-the-loop handlers
+ */
+export interface HumanHandlers {
+  approve: (message: string, context?: Record<string, unknown>) => Promise<boolean>
+  ask: (question: string) => Promise<string>
+  review: (content: { content: string; type: string }) => Promise<{ approved: boolean }>
+}
+
+/**
+ * The $ Context - runtime API for verb handlers, event handlers, and scheduled tasks
+ */
+export interface Context {
+  /** Database operations via noun accessors */
+  db: Record<string, NounAccessor>
+
+  /** AI template literal for generation */
+  ai: ((strings: TemplateStringsArray, ...values: unknown[]) => Promise<string>) &
+    ((prompt: string, options?: Record<string, unknown>) => Promise<string>)
+
+  /** Agent registry */
+  agents: Record<string, AgentDefinition & { run: (input: Record<string, unknown>) => Promise<unknown> }>
+
+  /** Human-in-the-loop handlers */
+  human: HumanHandlers
+
+  /** Fire and forget event dispatch (durable) */
+  send: (event: string, data?: Record<string, unknown>) => void
+
+  /** Wait for action result (durable) */
+  do: (action: string, data?: Record<string, unknown>) => Promise<unknown>
+
+  /** Integration API access */
+  api: Record<string, unknown>
+
+  /** Input payload for verb handlers */
+  input: Record<string, unknown>
+
+  /** Current record being operated on */
+  record: Record<string, unknown> | undefined
+
+  /** Current record ID */
+  id: string | undefined
+
+  /** Authenticated user */
+  user: { id: string; email: string; role?: string; [key: string]: unknown } | undefined
+
+  /** Current organization */
+  org: { id: string; name: string; plan?: string; [key: string]: unknown } | undefined
+
+  /** Environment variables */
+  env: Record<string, string | undefined>
+
+  /** Time helpers */
+  time: TimeHelpers
+
+  /** Event handler registration */
+  on: Record<string, Record<string, (handler: Function) => void>>
+
+  /** Schedule registration */
+  every: Record<string, unknown>
+}
+
+/**
  * App Context ($) - the runtime context available in event handlers and schedules
  *
  * Provides access to all dotdo services and utilities.

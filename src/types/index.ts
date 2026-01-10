@@ -40,6 +40,12 @@ export { schedule, Schedules } from './schedules'
 
 // Context - runtime $ object
 export type {
+  Context,
+  ContextConfig,
+  NounAccessor,
+  AgentDefinition,
+  TimeHelpers,
+  HumanHandlers,
   AppContext,
   NotifyOptions,
   EmailOptions,
@@ -52,3 +58,27 @@ export type {
 
 // App - main configuration
 export type { AppConfig, ResolvedApp, App } from './app'
+
+// Integrations - third-party API access
+export type {
+  OAuthConfig,
+  IntegrationConfigOptions,
+  StoredIntegration,
+  EmailSendOptions,
+  EmailSendResponse,
+  TextSendOptions,
+  TextSendResponse,
+  CallInitiateOptions,
+  CallInitiateResponse,
+  SlackMessageOptions,
+  EmailsApi,
+  TextsApi,
+  CallsApi,
+  SlackApi,
+  StripeApi,
+  SalesforceApi,
+  ThirdPartyApi,
+  ApiProxy,
+  FetchFunction,
+} from './integrations'
+export { VALID_CONFIG_KEYS } from './integrations'

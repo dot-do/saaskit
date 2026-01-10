@@ -3,15 +3,10 @@
  *
  * Tests for the $.integrate() and $.api.* proxy system that provides
  * access to 9000+ integrations via APIs.do.
- *
- * These tests are in RED phase - they define the expected API but
- * the implementation does not exist yet.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-
-// These imports will fail until implemented
-// import { createContext, $ } from '../core'
-// import type { IntegrationConfig, ApiProxy } from '../types'
+import { createContext } from '../core'
+import type { IntegrationConfigOptions, ApiProxy } from '../types'
 
 describe('Integrations Layer', () => {
   describe('$.integrate() - Integration Registration', () => {
@@ -669,13 +664,3 @@ describe('Integrations Layer', () => {
     })
   })
 })
-
-/**
- * Helper function to create a test context
- * This will be implemented in src/core/context.ts
- */
-function createContext() {
-  // This stub makes the tests compile but fail
-  // The actual implementation will replace this
-  throw new Error('createContext is not implemented yet')
-}
