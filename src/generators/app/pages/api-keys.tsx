@@ -59,7 +59,7 @@ export function createAPIKeysPage(config: AppGeneratorConfig): ComponentType<unk
     // Title
     children.push(createElement('h1', { key: 'title' }, 'API Keys'))
 
-    // Create button
+    // Create button (outside modal)
     children.push(
       createElement(
         'button',
@@ -73,7 +73,7 @@ export function createAPIKeysPage(config: AppGeneratorConfig): ComponentType<unk
             setSelectedScopes([])
           },
         },
-        'Create API Key'
+        'Create Key'
       )
     )
 
@@ -156,7 +156,7 @@ export function createAPIKeysPage(config: AppGeneratorConfig): ComponentType<unk
           createElement(
             'button',
             { key: 'create', type: 'button', onClick: handleCreateKey },
-            'Generate'
+            'Generate Key'
           )
         )
       }
