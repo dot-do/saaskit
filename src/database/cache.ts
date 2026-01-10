@@ -191,8 +191,9 @@ export class QueryCache<T extends BaseRecord> {
    * ```
    */
   invalidateWhere(predicate: (value: T) => boolean): void {
-    for (const [key, entry] of this.cache) {
-      if (predicate(entry.value)) {
+    for (const entry of Array.from(this.cache.entries())) {
+      const [key, cacheEntry] = entry
+      if (predicate(cacheEntry.value)) {
         this.cache.delete(key)
       }
     }
@@ -268,9 +269,10 @@ export class QueryCache<T extends BaseRecord> {
     let oldestKey: string | undefined
     let oldestAccess = Infinity
 
-    for (const [key, entry] of this.cache) {
-      if (entry.accessOrder < oldestAccess) {
-        oldestAccess = entry.accessOrder
+    for (const entry of Array.from(this.cache.entries())) {
+      const [key, cacheEntry] = entry
+      if (cacheEntry.accessOrder < oldestAccess) {
+        oldestAccess = cacheEntry.accessOrder
         oldestKey = key
       }
     }
@@ -363,7 +365,7 @@ export class CacheManager {
    * Clear all caches
    */
   clearAll(): void {
-    for (const cache of this.caches.values()) {
+    for (const cache of Array.from(this.caches.values())) {
       cache.clear()
     }
   }
@@ -373,7 +375,8 @@ export class CacheManager {
    */
   statsAll(): Record<string, ReturnType<QueryCache<BaseRecord>['stats']>> {
     const result: Record<string, ReturnType<QueryCache<BaseRecord>['stats']>> = {}
-    for (const [noun, cache] of this.caches) {
+    for (const entry of Array.from(this.caches.entries())) {
+      const [noun, cache] = entry
       result[noun] = cache.stats()
     }
     return result
