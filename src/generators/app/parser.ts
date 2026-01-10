@@ -146,6 +146,38 @@ export function isDestructiveVerb(verbName: string): boolean {
 }
 
 /**
+ * Convert a verb to past tense for event names
+ */
+function toPastTense(verb: string): string {
+  // Common irregular verbs
+  const irregulars: Record<string, string> = {
+    pay: 'paid',
+    ship: 'shipped',
+    cancel: 'cancelled',
+    refund: 'refunded',
+    restock: 'restocked',
+    fulfill: 'fulfilled',
+    delete: 'deleted',
+    create: 'created',
+    update: 'updated',
+  }
+
+  if (irregulars[verb]) {
+    return irregulars[verb]
+  }
+
+  // Simple rules for regular verbs
+  if (verb.endsWith('e')) {
+    return verb + 'd'
+  }
+  // Double final consonant for CVC pattern
+  if (/[^aeiou][aeiou][^aeiouw]$/.test(verb)) {
+    return verb + verb.slice(-1) + 'ed'
+  }
+  return verb + 'ed'
+}
+
+/**
  * Generate available webhook events from nouns and verbs
  */
 export function generateWebhookEvents(nouns: ParsedNoun[], verbs: VerbsConfig | undefined): string[] {
@@ -160,8 +192,7 @@ export function generateWebhookEvents(nouns: ParsedNoun[], verbs: VerbsConfig | 
     // Verb events
     const nounVerbs = getVerbsForNoun(verbs, noun.name)
     for (const verb of nounVerbs) {
-      // Convert verb to past tense for event name
-      const pastTense = verb.endsWith('e') ? verb + 'd' : verb + 'ed'
+      const pastTense = toPastTense(verb)
       events.push(`${noun.name}.${pastTense}`)
     }
   }

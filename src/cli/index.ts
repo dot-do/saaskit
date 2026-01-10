@@ -339,7 +339,6 @@ export async function dev(options: DevOptions): Promise<DevResult> {
       filename.includes('.git') ||
       filename === 'dist' ||
       filename.startsWith('dist/') ||
-      filename === '.saaskit-dev-ran' ||
       filename.startsWith('.saaskit')
     ) {
       return
