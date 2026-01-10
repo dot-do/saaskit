@@ -29,57 +29,8 @@
 
 import { describe, it, expect, vi } from 'vitest'
 import { createElement, type ComponentType, type ReactElement } from 'react'
-
-/**
- * Type definitions for the App Generator API
- * These define the expected shape of the implementation
- */
-interface AppRoute {
-  path: string
-  component: ComponentType<unknown>
-}
-
-interface GeneratedApp {
-  routes: AppRoute[]
-  getPage: (name: string) => ComponentType<unknown>
-  getShell: () => ComponentType<unknown>
-}
-
-interface RenderOptions {
-  app: unknown
-  initialData?: Record<string, unknown>
-  params?: Record<string, string>
-  navigate?: (path: string) => void
-  mutations?: Record<string, Record<string, (...args: unknown[]) => Promise<unknown>>>
-  verbs?: Record<string, Record<string, (ctx: unknown) => Promise<unknown>>>
-  realtime?: { connect: () => void }
-  user?: {
-    id: string
-    email?: string
-    role: string
-    permissions?: string[]
-    organizationRole?: string
-  }
-  onSort?: (sort: { field: string; direction: string }) => void
-  checkPermission?: (permission: string, context: { record: unknown }) => boolean
-}
-
-interface RenderResult {
-  realtimeEmit: (event: { type: string; noun: string; id: string; data?: unknown }) => void
-  setRealtimeStatus: (status: string) => void
-}
-
-// Stub implementations that throw errors - tests will fail at assertion level
-function generateApp(_config: unknown): GeneratedApp {
-  throw new Error('generateApp() not implemented - RED phase')
-}
-
-function renderWithProviders(
-  _element: ReactElement,
-  _options?: RenderOptions
-): RenderResult {
-  throw new Error('renderWithProviders() not implemented - RED phase')
-}
+import { generateApp, renderWithProviders, screen, waitFor, fireEvent } from '../generators/app'
+import type { AppRoute, GeneratedApp, RenderOptions, RenderResult } from '../generators/app'
 
 describe('App Generator', () => {
   /**

@@ -26,6 +26,7 @@ import type {
   OpenAPISpec,
   RateLimitConfig,
   APIKeyAuth,
+  CORSConfig,
 } from '../api-generator/types'
 
 describe('API Generator', () => {
@@ -37,6 +38,7 @@ describe('API Generator', () => {
     verbs?: Record<string, Record<string, Function>>
     rateLimiting?: RateLimitConfig
     authentication?: APIKeyAuth
+    cors?: CORSConfig
   } = {}) => {
     return createAPIGenerator({
       nouns: config.nouns ?? {
@@ -50,6 +52,7 @@ describe('API Generator', () => {
       },
       rateLimiting: config.rateLimiting,
       authentication: config.authentication,
+      cors: config.cors,
     })
   }
 

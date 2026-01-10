@@ -132,7 +132,48 @@ export interface SaaSContext<T extends NounDefinitions = NounDefinitions> {
   nouns(definitions: T): void
 
   /**
+   * Define verbs (actions) for nouns
+   */
+  verbs(definitions: Record<string, Record<string, (...args: unknown[]) => unknown>>): void
+
+  /**
+   * Add a noun dynamically
+   */
+  addNoun(name: string, schema: NounSchema): void
+
+  /**
+   * Update an existing noun's schema
+   */
+  updateNoun(name: string, schema: NounSchema): void
+
+  /**
+   * Add a verb dynamically
+   */
+  addVerb(nounName: string, verbName: string, handler: (...args: unknown[]) => unknown): void
+
+  /**
+   * Event handler registration proxy
+   * Usage: $.on.Order.created(handler)
+   */
+  on: Record<string, Record<string, (handler: (...args: unknown[]) => unknown) => void>>
+
+  /**
    * Database accessors for defined nouns
    */
   db: Database<T>
+
+  /**
+   * Get noun definitions (for introspection)
+   */
+  getNounDefinitions(): NounDefinitions | null
+
+  /**
+   * Get verb definitions (for introspection)
+   */
+  getVerbDefinitions(): Record<string, Record<string, (...args: unknown[]) => unknown>>
+
+  /**
+   * Get registered event handlers (for introspection)
+   */
+  getEventHandlers(): Record<string, Array<(...args: unknown[]) => unknown>>
 }

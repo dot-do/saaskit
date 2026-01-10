@@ -593,7 +593,42 @@ export function createSaaS(): SaaSContext {
     }
   )
 
-  return {
+  // Verb definitions: { NounName: { verbName: handler } }
+  let verbDefinitions: Record<string, Record<string, (...args: unknown[]) => unknown>> = {}
+
+  // Registered event handlers: { 'noun.event': handler[] }
+  const eventHandlers: Record<string, Array<(...args: unknown[]) => unknown>> = {}
+
+  // Create proxy for $.on that allows $.on.Order.created(handler)
+  const onProxy = new Proxy(
+    {},
+    {
+      get(_target, nounName: string | symbol) {
+        if (typeof nounName === 'symbol') return undefined
+
+        // Return a proxy for the noun that captures event names
+        return new Proxy(
+          {},
+          {
+            get(_target, eventName: string | symbol) {
+              if (typeof eventName === 'symbol') return undefined
+
+              // Return a function to register the handler
+              return (handler: (...args: unknown[]) => unknown) => {
+                const key = `${nounName.toLowerCase()}.${eventName}`
+                if (!eventHandlers[key]) {
+                  eventHandlers[key] = []
+                }
+                eventHandlers[key].push(handler)
+              }
+            },
+          }
+        )
+      },
+    }
+  )
+
+  const context = {
     nouns(definitions: NounDefinitions): void {
       if (nounDefinitions !== null) {
         throw new Error('Nouns already defined. Cannot redefine nouns after initial definition.')
@@ -605,8 +640,65 @@ export function createSaaS(): SaaSContext {
       nounDefinitions = definitions
     },
 
+    verbs(
+      definitions: Record<string, Record<string, (...args: unknown[]) => unknown>>
+    ): void {
+      verbDefinitions = { ...verbDefinitions, ...definitions }
+    },
+
+    addNoun(name: string, schema: NounSchema): void {
+      if (nounDefinitions === null) {
+        nounDefinitions = {}
+      }
+      nounDefinitions[name] = schema
+      // Clear cached accessor if it exists
+      accessors.delete(name)
+    },
+
+    updateNoun(name: string, schema: NounSchema): void {
+      if (nounDefinitions === null) {
+        nounDefinitions = {}
+      }
+      nounDefinitions[name] = schema
+      // Clear cached accessor to force recreation
+      accessors.delete(name)
+    },
+
+    addVerb(
+      nounName: string,
+      verbName: string,
+      handler: (...args: unknown[]) => unknown
+    ): void {
+      if (!verbDefinitions[nounName]) {
+        verbDefinitions[nounName] = {}
+      }
+      verbDefinitions[nounName][verbName] = handler
+    },
+
+    get on() {
+      return onProxy
+    },
+
     get db() {
       return dbProxy as ReturnType<typeof createSaaS>['db']
     },
-  } as SaaSContext
+
+    // Expose internal state for documentation generator
+    getNounDefinitions(): NounDefinitions | null {
+      return nounDefinitions
+    },
+
+    getVerbDefinitions(): Record<
+      string,
+      Record<string, (...args: unknown[]) => unknown>
+    > {
+      return verbDefinitions
+    },
+
+    getEventHandlers(): Record<string, Array<(...args: unknown[]) => unknown>> {
+      return eventHandlers
+    },
+  }
+
+  return context as SaaSContext
 }

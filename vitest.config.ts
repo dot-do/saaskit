@@ -6,6 +6,8 @@ export default mergeConfig(
   defineProject({
     test: {
       name: 'saaskit',
+      environment: 'jsdom',
+      globals: true,
     },
   })
 )

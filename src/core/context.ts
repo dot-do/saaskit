@@ -34,6 +34,8 @@ import type {
   SlackMessageOptions,
 } from '../types/integrations'
 import { VALID_CONFIG_KEYS } from '../types/integrations'
+import { createBilling } from '../billing/billing'
+import type { BillingInterface } from '../billing/types'
 
 /**
  * Extended context interface with integration layer methods
@@ -47,6 +49,8 @@ export interface ExtendedContext<T extends NounDefinitions = NounDefinitions> ex
   getIntegration: (name: string) => StoredIntegration | undefined
   /** Set custom fetch function for testing */
   setFetch: (fetchFn: FetchFunction) => void
+  /** Billing integration for Stripe */
+  billing: BillingInterface
 }
 
 /**
@@ -783,6 +787,7 @@ export function createContext<T extends NounDefinitions = NounDefinitions>(
   let cachedTime: TimeHelpers | null = null
   let cachedOn: Record<string, Record<string, (handler: Function) => void>> | null = null
   let cachedEvery: Record<string, unknown> | null = null
+  let cachedBilling: BillingInterface | null = null
 
   /**
    * Register an integration with validation
@@ -833,6 +838,8 @@ export function createContext<T extends NounDefinitions = NounDefinitions>(
     customFetch = fetchFn
     // Clear API cache so new fetch function is used
     cachedApi = null
+    // Clear billing cache so new fetch function is used
+    cachedBilling = null
   }
 
   // Use Object.defineProperty for proper getter behavior on the context object
@@ -966,6 +973,18 @@ export function createContext<T extends NounDefinitions = NounDefinitions>(
           cachedEvery = createEveryProxy()
         }
         return cachedEvery
+      },
+      enumerable: true,
+      configurable: true,
+    },
+
+    // Billing integration - lazy initialized
+    billing: {
+      get() {
+        if (!cachedBilling) {
+          cachedBilling = createBilling(() => customFetch)
+        }
+        return cachedBilling
       },
       enumerable: true,
       configurable: true,
