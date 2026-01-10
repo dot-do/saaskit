@@ -23,6 +23,7 @@ interface TestContextValue {
   user?: AppUser
   onSort?: (sort: { field: string; direction: string }) => void
   checkPermission: (permission: string, context: { record: unknown }) => boolean
+  hasCustomPermissionCheck: boolean
   realtimeStatus: string
   setRealtimeStatus: (status: string) => void
   updateData: (noun: string, data: unknown) => void
@@ -174,6 +175,7 @@ function TestProvider({
     user: options.user,
     onSort: options.onSort,
     checkPermission: defaultCheckPermission,
+    hasCustomPermissionCheck: !!options.checkPermission,
     realtimeStatus,
     setRealtimeStatus,
     updateData,

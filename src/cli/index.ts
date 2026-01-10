@@ -177,19 +177,12 @@ export async function init(options: InitOptions): Promise<InitResult> {
     } catch {
       // Install failed, but project is still scaffolded
     }
-  } else {
-    // When install is false, mark this directory as "needs dependencies"
-    // The dev command will track if it creates a placeholder
-    initWithoutInstallDirs.add(directory)
   }
 
   return {
     success: true,
   }
 }
-
-// Track directories where init was called with install: false
-const initWithoutInstallDirs = new Set<string>()
 
 // Track active ports for dev servers
 const activePorts = new Set<number>()

@@ -19,7 +19,7 @@ export function createShowPage(
 ): ComponentType<unknown> {
   return function ShowPage() {
     const ctx = useTestContext()
-    const { data, params, navigate, verbs: verbHandlers, user, checkPermission } = ctx
+    const { data, params, navigate, verbs: verbHandlers, user, checkPermission, hasCustomPermissionCheck } = ctx
 
     const nounData = data[noun.name] as {
       record?: Record<string, unknown>
