@@ -212,22 +212,22 @@ if (hasPermission('Order.refund')) {
 
 ## Backend
 
-saaskit connects to dotdo Durable Objects by default:
+saaskit is DO-native. DB and Auth are automatic — you only configure the endpoint and namespace:
 
 ```tsx
-import { SaaS } from 'saaskit'
-import { DO } from 'saaskit'
+import { SaaS, defineApp } from 'saaskit'
 
-const { Auth, DB } = DO('https://api.your-app.do')
+const app = defineApp({
+  do: 'https://api.your-app.do',  // endpoint
+  ns: 'tenant-123',               // namespace/context
 
-<SaaS
-  app={app}
-  dataProvider={DB()}
-  authProvider={Auth()}
-/>
+  nouns: ['User', 'Product', 'Order'],
+  // ...
+})
+
+// DB and Auth are built-in. No providers to configure.
+export default () => <SaaS app={app} />
 ```
-
-Or bring your own backend by implementing the Provider interface.
 
 ## Related Packages
 
