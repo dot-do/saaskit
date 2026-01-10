@@ -148,7 +148,7 @@ export function createAPIKeysPage(config: AppGeneratorConfig): ComponentType<unk
       if (createdKey) {
         modalContent.push(
           createElement('div', { key: 'created-key' }, [
-            createElement('p', { key: 'warning' }, 'This key will not be shown again. Please copy it now.'),
+            createElement('p', { key: 'warning' }, 'This key will not be shown again. Save it now.'),
             createElement('code', { key: 'key' }, createdKey),
             createElement('button', { key: 'copy', type: 'button' }, 'Copy to Clipboard'),
           ])

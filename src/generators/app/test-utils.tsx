@@ -4,7 +4,7 @@
  * Provides renderWithProviders and other test helpers.
  */
 
-import { createElement, type ReactElement, useState, useCallback, useRef, useEffect } from 'react'
+import { createContext, useContext, createElement, type ReactElement, useState, useCallback, useRef, useEffect } from 'react'
 import type { RenderOptions, RenderResult, RealtimeEvent, AppUser } from './types'
 
 // Re-export screen, waitFor, fireEvent from @testing-library/react
@@ -31,22 +31,19 @@ interface TestContextValue {
 }
 
 /**
- * Simple context without using createContext (to avoid JSX in this file)
+ * React Context for test state
  */
-let testContext: TestContextValue | null = null
-
-export function getTestContext(): TestContextValue {
-  if (!testContext) {
-    throw new Error('Test context not initialized')
-  }
-  return testContext
-}
+const TestContext = createContext<TestContextValue | null>(null)
 
 /**
  * Hook to use in generated components
  */
 export function useTestContext(): TestContextValue {
-  return getTestContext()
+  const context = useContext(TestContext)
+  if (!context) {
+    throw new Error('Test context not initialized - wrap component with TestProvider')
+  }
+  return context
 }
 
 /**
@@ -159,14 +156,19 @@ function TestProvider({
     }
   }, [realtimeStatus, options.realtime])
 
-  // Expose callbacks
-  useEffect(() => {
-    onRealtimeEmit((event) => handleRealtimeEvent(event))
-    onSetRealtimeStatus((status) => setRealtimeStatus(status))
-  }, [handleRealtimeEvent, setRealtimeStatus, onRealtimeEmit, onSetRealtimeStatus])
+  // Expose callbacks - use ref to avoid effect re-running
+  const handleRealtimeEventRef = useRef(handleRealtimeEvent)
+  const setRealtimeStatusRef = useRef(setRealtimeStatus)
+  handleRealtimeEventRef.current = handleRealtimeEvent
+  setRealtimeStatusRef.current = setRealtimeStatus
 
-  // Set global context
-  testContext = {
+  useEffect(() => {
+    onRealtimeEmit((event) => handleRealtimeEventRef.current(event))
+    onSetRealtimeStatus((status) => setRealtimeStatusRef.current(status))
+  }, [onRealtimeEmit, onSetRealtimeStatus])
+
+  // Create context value
+  const contextValue: TestContextValue = {
     data,
     params: options.params || {},
     navigate,
@@ -182,7 +184,7 @@ function TestProvider({
     handleRealtimeEvent,
   }
 
-  return children
+  return createElement(TestContext.Provider, { value: contextValue }, children)
 }
 
 /**
@@ -209,18 +211,18 @@ export function renderWithProviders(
   )
 
   return {
-    container: result.container,
+    ...result,
     realtimeEmit: (event: RealtimeEvent) => {
       if (realtimeEmitCallback) {
         act(() => {
-          realtimeEmitCallback(event)
+          realtimeEmitCallback!(event)
         })
       }
     },
     setRealtimeStatus: (status: string) => {
       if (setRealtimeStatusCallback) {
         act(() => {
-          setRealtimeStatusCallback(status)
+          setRealtimeStatusCallback!(status)
         })
       }
     },

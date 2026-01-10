@@ -142,7 +142,6 @@ export function createShowPage(
 
         // If custom checkPermission is provided, show button but maybe disabled
         // If using user.permissions, hide button when no permission
-        const hasCustomPermissionCheck = !!checkPermission
         if (!hasCustomPermissionCheck && !canExecute) {
           continue // Hide button when using user.permissions and no permission
         }

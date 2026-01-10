@@ -145,10 +145,13 @@ export function createWebhooksPage(
     // Test result display
     if (testResult) {
       children.push(
-        createElement('div', { key: 'test-result' }, [
-          createElement('span', { key: 'success' }, testResult.success ? 'Success' : 'Failed'),
-          createElement('span', { key: 'status' }, `Status: ${testResult.statusCode}`),
-        ])
+        createElement('div', { key: 'test-result' },
+          createElement('span', { key: 'status' },
+            testResult.success
+              ? `Success (${testResult.statusCode})`
+              : `Failed (${testResult.statusCode})`
+          )
+        )
       )
     }
 
