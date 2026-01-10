@@ -1,0 +1,312 @@
+---
+name: SaaSkit
+tagline: Your idea. Running. Tomorrow.
+hero:
+  badge: Now in Public Beta
+  headline: Stop building infrastructure. Start building your business.
+  subheadline: Define your SaaS in Nouns and Verbs. We generate everything else.
+  primaryCTA:
+    label: Start Building
+    href: https://startups.new
+  secondaryCTA:
+    label: View on GitHub
+    href: https://github.com/dotdo/saaskit
+---
+
+# The Gap
+
+You have an idea.
+
+Maybe it's been rattling around your head for months. Maybe years. You can see it. You can feel customers using it. You know it would work.
+
+But you haven't built it.
+
+Not because you can't. Because between your idea and a running business stands **everything else**:
+
+Authentication. Authorization. User management. Billing. Subscriptions. Admin dashboards. CRUD interfaces. API design. Documentation. SDK generation. CLI tooling. Webhooks. Rate limiting. Error handling. Landing pages. Legal entities. Business banking. Compliance. Marketing. Sales. Support.
+
+That's not your idea. That's the tax you pay to have an idea.
+
+Six months. Twelve months. Maybe never.
+
+**What if it didn't have to be that way?**
+
+---
+
+# The Shift
+
+What if you could describe your business—just your business—and everything else appeared?
+
+Not a template. Not a boilerplate. Not "some assembly required."
+
+Your actual business. Your nouns. Your verbs. Your logic.
+
+And from that: App. API. Site. Docs. CLI. SDK. Webhooks. Billing. All of it. Running. Live. Yours.
+
+```tsx
+<SaaS name="YourIdea">
+  {$ => {
+    $.nouns({ Customer: { name: 'string', email: 'string' } })
+    $.verbs({ Customer: { notify: $ => $.api.emails.send({ to: $.record.email }) } })
+  }}
+</SaaS>
+```
+
+That's not pseudocode. That's a business.
+
+---
+
+# What You Get
+
+From those few lines, everything derives:
+
+| You Write | You Get |
+|-----------|---------|
+| Nouns | Database schema, CRUD API, Admin UI, Search, Relationships |
+| Verbs | API endpoints, CLI commands, Webhook triggers, SDK methods |
+| Events | Real-time subscriptions, Workflow triggers, Slack notifications |
+| Schedules | Cron jobs, Recurring tasks, Automated reports |
+| Agents | AI workers with tools, Human-in-the-loop, Autonomous operations |
+
+**One definition. Infinite derivations.**
+
+---
+
+# The Cascade
+
+Your single `<SaaS />` definition cascades into a complete business:
+
+## App
+Full React admin dashboard at `yourapp.saas.dev`. Dashboard, CRUD for every noun, settings, team management, billing portal, API keys, webhooks. Done.
+
+## API
+REST + GraphQL + WebSocket at `api.yourapp.saas.dev`. Every noun gets CRUD. Every verb becomes an endpoint. Real-time subscriptions for everything. Done.
+
+## Site
+Landing page at `yourapp.io.sb`. Hero section, features derived from your nouns, pricing from your plans, testimonials when you earn them. Done.
+
+## Docs
+API reference at `docs.yourapp.io.sb`. Authentication guide, endpoint reference, webhook events, SDK installation. Done.
+
+## CLI
+Command-line interface via `npx yourapp`. Every noun, every verb, accessible from terminal. Done.
+
+## MCP
+Works with Claude, ChatGPT, Cursor. Your customers can talk to your SaaS. Done.
+
+## SDK
+Type-safe client library via `npm install yourapp`. Full TypeScript support, real-time subscriptions, every operation typed. Done.
+
+## Zapier
+Your app auto-publishes to Zapier. Triggers for every event, actions for every verb, searches for every noun. Done.
+
+## Stripe
+Subscriptions flowing via Stripe Connect. Plans, pricing, trials, upgrades, downgrades, invoices. Done.
+
+---
+
+# The $ Context
+
+The `$` is your handle to everything. No configuration. No glue code. Just use it.
+
+```typescript
+$.db       // Database operations
+$.ai       // AI-generated content
+$.agents   // AI workers with tools
+$.human    // Human-in-the-loop
+$.api      // 9000+ integrations
+$.send     // Fire-and-forget events
+$.do       // Durable workflow steps
+$.on       // React to events
+$.every    // Scheduled tasks
+```
+
+Need to charge a customer? `$.api.stripe`
+Need to send an email? `$.api.emails`
+Need AI to write something? `$.ai`
+Need human approval? `$.human.approve`
+Need to notify Slack? `$.api.slack`
+
+It's all there. Ready. Waiting for your business logic.
+
+---
+
+# AI Native
+
+SaaSkit doesn't bolt on AI. It's built from AI primitives.
+
+## Generate Content
+```typescript
+const email = await $.ai`Write a welcome email for ${customer.name}`
+```
+
+## Deploy Agents
+```typescript
+$.agent('support', {
+  instructions: 'You are a helpful support agent...',
+  tools: ['getCustomer', 'refundOrder', 'escalate'],
+})
+```
+
+## Keep Humans in the Loop
+```typescript
+if (amount > 500) {
+  await $.human.approve(`Approve $${amount} refund?`)
+}
+```
+
+Your SaaS thinks, acts, and knows when to ask for help.
+
+---
+
+# Real Example
+
+A complete recruiting SaaS. In one file:
+
+```tsx
+<SaaS name="RecruitKit">
+  {$ => {
+    $.nouns({
+      Candidate: {
+        name: 'string',
+        email: 'string',
+        skills: ['~>Skill'],      // Fuzzy match to taxonomy
+        matches: ['<-Match'],
+      },
+      Match: {
+        score: 'number',
+        status: 'new | shortlisted | contacted | hired',
+        candidate: '->Candidate',
+      },
+    })
+
+    $.verbs({
+      Match: {
+        contact: async $ => {
+          const email = await $.ai`Write recruiting email to ${$.record.candidate.name}`
+          await $.api.emails.send({ to: $.record.candidate.email, body: email })
+          return $.db.Match.update($.id, { status: 'contacted' })
+        },
+      },
+    })
+
+    $.on.Match.hired(async (match, $) => {
+      await $.api.slack.send('#wins', `${match.candidate.name} hired!`)
+    })
+
+    $.every.Monday.at9am(async $ => {
+      const stats = await $.db.Match.aggregate({ hired: { status: 'hired' } })
+      await $.api.slack.send('#metrics', `Weekly: ${stats.hired} hired`)
+    })
+
+    $.agent('sourcer', {
+      instructions: 'Find candidates that match search criteria.',
+      tools: ['searchCandidates', 'scoreMatch'],
+    })
+  }}
+</SaaS>
+```
+
+**250 lines of business logic. Complete recruiting platform.**
+
+App, API, landing page, docs, CLI, SDK, webhooks, billing—all derived.
+
+---
+
+# The Ecosystem
+
+SaaSkit is part of something bigger.
+
+## Platform.do
+The primitives that power everything:
+- **Agents.do** — AI workers with tools
+- **Database.do** — Schema-first database with relationships
+- **Functions.do** — Serverless execution
+- **Workflows.do** — Durable state machines
+- **Payments.do** — Stripe Connect integration
+- **Emails.do** — Transactional + marketing
+- **Bank.Accounts.do** — Business banking + cards
+- *20+ more primitives*
+
+## Startups.Studio
+The path from idea to business:
+- **StartupBuilder** — Build startups in minutes
+- **ServiceBuilder** — AI-delivered Services-as-Software
+- **SalesBuilder** — Mark (Marketing) + Sally (Sales)
+
+## SaaS.Dev
+Deploy your SaaSkit app. Managed hosting. Zero ops.
+
+## SaaS.Studio
+Manage your SaaS. MRR, ARR, churn, customers, revenue. One dashboard.
+
+---
+
+# Start Now
+
+## Install
+```bash
+npm install saaskit
+```
+
+## Create
+```tsx
+import { SaaS } from 'saaskit'
+
+export default () => (
+  <SaaS name="MyApp">
+    {$ => {
+      $.nouns({ Todo: { title: 'string', done: 'boolean' } })
+      $.verbs({ Todo: { complete: $ => $.db.Todo.update($.id, { done: true }) } })
+    }}
+  </SaaS>
+)
+```
+
+## Deploy
+```bash
+npx saaskit deploy
+```
+
+## Done
+Your SaaS is live at `myapp.saas.dev`.
+
+---
+
+# The Transformation
+
+This isn't about saving time. Though you will.
+
+This isn't about saving money. Though you will.
+
+This is about **becoming**.
+
+You have an idea. You've had it for too long.
+
+Stop being someone who *wants* to build a SaaS.
+
+Start being someone who *runs* a SaaS.
+
+**A profitable one.**
+
+---
+
+# Your Move
+
+The gap between idea and business used to be six months of infrastructure.
+
+Now it's one file and one command.
+
+Your idea. Your nouns. Your verbs.
+
+Everything else is our job.
+
+**Idea → Profitable SaaS.**
+
+**Wantrepreneur → Entrepreneur.**
+
+<CTA
+  headline="Ready?"
+  primary={{ label: "Start Building", href: "https://startups.new" }}
+  secondary={{ label: "Read the Docs", href: "https://docs.saaskit.dev" }}
+/>
