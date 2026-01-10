@@ -2,6 +2,38 @@
  * API Generator
  *
  * Generates REST and GraphQL APIs from noun/verb definitions.
+ * Supports API versioning, deprecation warnings, request validation,
+ * custom middleware hooks, and OpenAPI specification generation.
+ *
+ * @module api-generator
+ *
+ * @example
+ * ```typescript
+ * import { createAPIGenerator } from './api-generator'
+ *
+ * const api = createAPIGenerator({
+ *   nouns: {
+ *     Todo: { title: 'string', done: 'boolean' }
+ *   },
+ *   verbs: {
+ *     Todo: {
+ *       complete: ($) => $.db.Todo.update($.id, { done: true })
+ *     }
+ *   },
+ *   versioning: {
+ *     enabled: true,
+ *     defaultVersion: 'v1'
+ *   }
+ * })
+ *
+ * // Handle REST request
+ * const response = await api.handleRequest({
+ *   method: 'GET',
+ *   path: '/todos',
+ *   query: {},
+ *   body: null
+ * })
+ * ```
  */
 
 import type {
@@ -22,6 +54,12 @@ import type {
   APIKeyValidationResult,
   NounDefinition,
   FieldType,
+  APIVersion,
+  DeprecationNotice,
+  BreakingChange,
+  MiddlewareFn,
+  PostHookFn,
+  MiddlewareContext,
 } from './types'
 
 export * from './types'
@@ -30,10 +68,20 @@ export * from './types'
 // Utility Functions
 // ============================================================================
 
+/**
+ * Generates a unique identifier for records
+ * @returns A random string ID
+ */
 function generateId(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
 }
 
+/**
+ * Converts a noun to its plural form
+ * Handles common English pluralization rules
+ * @param noun - The singular noun to pluralize
+ * @returns The plural form of the noun
+ */
 function pluralize(noun: string): string {
   const lower = noun.toLowerCase()
   if (lower.endsWith('s') || lower.endsWith('x') || lower.endsWith('z') || lower.endsWith('ch') || lower.endsWith('sh')) {
@@ -45,14 +93,29 @@ function pluralize(noun: string): string {
   return lower + 's'
 }
 
+/**
+ * Returns the lowercase singular form of a noun
+ * @param noun - The noun to singularize
+ * @returns The singular form (lowercase)
+ */
 function singularize(noun: string): string {
   return noun.toLowerCase()
 }
 
+/**
+ * Capitalizes the first letter of a string
+ * @param str - The string to capitalize
+ * @returns The capitalized string
+ */
 function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
+/**
+ * Parses a time window string into milliseconds
+ * @param window - Time window string (e.g., '1m', '30s', '1h', '1d')
+ * @returns The time window in milliseconds
+ */
 function parseWindow(window: string): number {
   const match = window.match(/^(\d+)([smhd])$/)
   if (!match) return 60000 // default 1 minute
@@ -66,6 +129,11 @@ function parseWindow(window: string): number {
   return parseInt(num) * ms
 }
 
+/**
+ * Maps a field type to OpenAPI schema type
+ * @param fieldType - The field type from noun definition
+ * @returns OpenAPI schema type with optional enum values
+ */
 function mapFieldTypeToOpenAPI(fieldType: FieldType): { type: string; enum?: string[] } {
   if (fieldType.includes('|')) {
     const values = fieldType.split('|').map(v => v.trim())
@@ -80,6 +148,12 @@ function mapFieldTypeToOpenAPI(fieldType: FieldType): { type: string; enum?: str
   return { type: typeMap[baseType] || 'string' }
 }
 
+/**
+ * Validates a field value against its expected type
+ * @param value - The value to validate
+ * @param expectedType - The expected type (e.g., 'string', 'number?', 'active | inactive')
+ * @returns True if the value matches the expected type
+ */
 function validateField(value: unknown, expectedType: FieldType): boolean {
   const isOptional = expectedType.endsWith('?')
   const baseType = expectedType.replace('?', '')
@@ -97,16 +171,58 @@ function validateField(value: unknown, expectedType: FieldType): boolean {
   return actualType === baseType
 }
 
+/**
+ * Extracts API version from request path or headers
+ * @param request - The incoming API request
+ * @param versionHeader - Optional header name to check for version
+ * @returns The API version if found
+ */
+function extractVersion(request: APIRequest, versionHeader?: string): APIVersion | undefined {
+  // Check header first
+  if (versionHeader && request.headers?.[versionHeader]) {
+    return request.headers[versionHeader] as APIVersion
+  }
+
+  // Check path (e.g., /v1/todos)
+  const pathMatch = request.path.match(/^\/(v\d+)\//)
+  if (pathMatch) {
+    return pathMatch[1] as APIVersion
+  }
+
+  return undefined
+}
+
+/**
+ * Strips version prefix from path if present
+ * @param path - The URL path to strip
+ * @returns The path without version prefix
+ */
+function stripVersionFromPath(path: string): string {
+  return path.replace(/^\/v\d+/, '')
+}
+
 // ============================================================================
 // In-Memory Storage
 // ============================================================================
 
+/**
+ * Represents a stored record with an ID and arbitrary fields
+ */
 interface StorageRecord {
+  /** Unique identifier for the record */
   id: string
+  /** Additional fields based on noun schema */
   [key: string]: unknown
 }
 
+/**
+ * In-memory storage implementation for API data
+ * Provides CRUD operations for each noun type
+ *
+ * @internal
+ */
 class InMemoryStorage {
+  /** Map of noun name to record store */
   private data: Map<string, Map<string, StorageRecord>> = new Map()
 
   constructor(nouns: string[]) {
@@ -185,9 +301,19 @@ class InMemoryStorage {
 // Event Emitter for Subscriptions
 // ============================================================================
 
+/**
+ * Event listener callback function type
+ */
 type EventListener = (data: any, filter?: Record<string, unknown>) => void
 
+/**
+ * Simple event emitter for GraphQL subscriptions
+ * Supports filtered subscriptions where listeners only receive matching events
+ *
+ * @internal
+ */
 class EventEmitter {
+  /** Map of event names to listener sets */
   private listeners: Map<string, Set<{ callback: EventListener; filter?: Record<string, unknown> }>> = new Map()
 
   on(event: string, callback: EventListener, filter?: Record<string, unknown>): UnsubscribeFn {
@@ -226,14 +352,31 @@ class EventEmitter {
 // Rate Limiter
 // ============================================================================
 
+/**
+ * Token bucket rate limiter implementation
+ * Tracks request counts per key within configurable time windows
+ *
+ * @internal
+ */
 class RateLimiter {
+  /** Map of client keys to request counts and reset times */
   private requests: Map<string, { count: number; resetAt: number }> = new Map()
+  /** Rate limit configuration */
   private config: RateLimitRule
 
+  /**
+   * Creates a new rate limiter
+   * @param config - Rate limit configuration with requests and window
+   */
   constructor(config: RateLimitRule) {
     this.config = config
   }
 
+  /**
+   * Checks if a request is allowed and updates the request count
+   * @param key - Client identifier (e.g., API key or IP)
+   * @returns Whether the request is allowed, remaining requests, and reset time
+   */
   check(key: string): { allowed: boolean; remaining: number; resetAt: number } {
     const now = Date.now()
     const windowMs = parseWindow(this.config.window)
@@ -329,8 +472,63 @@ function parseGraphQL(query: string): ParsedGraphQL {
 // API Generator Implementation
 // ============================================================================
 
+/**
+ * Creates a new API generator instance from the provided configuration
+ *
+ * The API generator provides:
+ * - REST endpoints for CRUD operations on nouns
+ * - REST endpoints for verb execution
+ * - GraphQL schema generation (queries, mutations, subscriptions)
+ * - OpenAPI specification generation
+ * - Rate limiting and authentication
+ * - API versioning and deprecation warnings
+ * - Custom middleware hooks
+ *
+ * @param config - The API generator configuration
+ * @returns An API generator instance
+ *
+ * @example
+ * ```typescript
+ * const api = createAPIGenerator({
+ *   nouns: {
+ *     Todo: { title: 'string', done: 'boolean' },
+ *     User: { name: 'string', email: 'string' }
+ *   },
+ *   verbs: {
+ *     Todo: {
+ *       complete: ($) => $.db.Todo.update($.id, { done: true })
+ *     }
+ *   },
+ *   rateLimiting: {
+ *     requests: 100,
+ *     window: '1m'
+ *   },
+ *   versioning: {
+ *     enabled: true,
+ *     defaultVersion: 'v1',
+ *     versions: {
+ *       v1: { version: 'v1' },
+ *       v2: { version: 'v2', deprecated: true, sunsetDate: '2025-01-01' }
+ *     }
+ *   }
+ * })
+ * ```
+ */
 export function createAPIGenerator(config: APIGeneratorConfig): APIGenerator {
-  const { nouns, verbs = {}, rateLimiting, authentication, cors } = config
+  const {
+    nouns,
+    verbs = {},
+    rateLimiting,
+    authentication,
+    cors,
+    versioning,
+    deprecatedEndpoints = {},
+    middleware = {},
+  } = config
+
+  // Middleware storage
+  const beforeMiddleware: MiddlewareFn[] = [...(middleware.before || [])]
+  const afterHooks: PostHookFn[] = [...(middleware.after || [])]
   const nounNames = Object.keys(nouns)
   const storage = new InMemoryStorage(nounNames)
   const events = new EventEmitter()
@@ -558,10 +756,99 @@ export function createAPIGenerator(config: APIGeneratorConfig): APIGenerator {
   // CORS headers
   function getCorsHeaders(): Record<string, string> {
     if (!cors) return {}
-    return {
+    const headers: Record<string, string> = {
       'Access-Control-Allow-Origin': cors.origin,
       'Access-Control-Allow-Methods': cors.methods?.join(', ') || 'GET, POST, PUT, DELETE, OPTIONS',
     }
+    if (cors.allowedHeaders) {
+      headers['Access-Control-Allow-Headers'] = cors.allowedHeaders.join(', ')
+    }
+    if (cors.exposedHeaders) {
+      headers['Access-Control-Expose-Headers'] = cors.exposedHeaders.join(', ')
+    }
+    if (cors.credentials) {
+      headers['Access-Control-Allow-Credentials'] = 'true'
+    }
+    if (cors.maxAge !== undefined) {
+      headers['Access-Control-Max-Age'] = cors.maxAge.toString()
+    }
+    return headers
+  }
+
+  /**
+   * Get deprecation notice for an endpoint
+   * @param endpointKey - Endpoint pattern (e.g., 'GET /todos/:id')
+   * @param version - Optional version to check
+   * @returns Deprecation notice if deprecated
+   */
+  function getDeprecation(endpointKey: string, version?: APIVersion): DeprecationNotice | undefined {
+    // Check endpoint-specific deprecation
+    if (deprecatedEndpoints[endpointKey]) {
+      return deprecatedEndpoints[endpointKey]
+    }
+
+    // Check version-level deprecation
+    if (version && versioning?.versions?.[version]?.deprecated) {
+      const versionConfig = versioning.versions[version]
+      return {
+        deprecated: true,
+        message: versionConfig.deprecationMessage || `API version ${version} is deprecated`,
+        sunsetDate: versionConfig.sunsetDate,
+      }
+    }
+
+    return undefined
+  }
+
+  /**
+   * Add deprecation headers to response
+   * @param headers - Headers object to modify
+   * @param deprecation - Deprecation notice
+   */
+  function addDeprecationHeaders(headers: Record<string, string>, deprecation: DeprecationNotice): void {
+    headers['Deprecation'] = 'true'
+    if (deprecation.sunsetDate) {
+      headers['Sunset'] = deprecation.sunsetDate
+    }
+    if (deprecation.alternative) {
+      headers['Link'] = `<${deprecation.alternative}>; rel="successor-version"`
+    }
+    if (deprecation.message) {
+      headers['X-Deprecation-Notice'] = deprecation.message
+    }
+  }
+
+  /**
+   * Run before middleware
+   * @param context - Middleware context
+   * @returns Final middleware result
+   */
+  async function runBeforeMiddleware(context: MiddlewareContext): Promise<{ continue: boolean; response?: APIResponse; context: MiddlewareContext }> {
+    let currentContext = context
+    for (const mw of beforeMiddleware) {
+      const result = await mw(currentContext)
+      if (!result.continue) {
+        return { continue: false, response: result.response, context: currentContext }
+      }
+      if (result.context) {
+        currentContext = { ...currentContext, ...result.context }
+      }
+    }
+    return { continue: true, context: currentContext }
+  }
+
+  /**
+   * Run after hooks
+   * @param context - Middleware context
+   * @param response - Initial response
+   * @returns Modified response
+   */
+  async function runAfterHooks(context: MiddlewareContext, response: APIResponse): Promise<APIResponse> {
+    let currentResponse = response
+    for (const hook of afterHooks) {
+      currentResponse = await hook(context, currentResponse)
+    }
+    return currentResponse
   }
 
   return {

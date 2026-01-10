@@ -1,11 +1,15 @@
 /**
  * Test Utilities for App Generator
  *
- * Provides renderWithProviders and other test helpers.
+ * Provides renderWithProviders and other test helpers for testing
+ * generated pages with customization hooks support.
+ *
+ * @module generators/app/test-utils
  */
 
 import { createContext, useContext, createElement, type ReactElement, useState, useCallback, useRef, useEffect } from 'react'
-import type { RenderOptions, RenderResult, RealtimeEvent, AppUser } from './types'
+import type { RenderOptions, RenderResult, RealtimeEvent, AppUser, AppGeneratorConfig } from './types'
+import type { AppCustomization } from './customization'
 
 // Re-export screen, waitFor, fireEvent from @testing-library/react
 export { screen, waitFor, fireEvent } from '@testing-library/react'
@@ -13,21 +17,40 @@ import { render, act } from '@testing-library/react'
 
 /**
  * Internal context for test state management
+ *
+ * @remarks
+ * Provides all state and callbacks needed by generated page components,
+ * including customization hooks for field renderers, themes, and plugins.
  */
 interface TestContextValue {
+  /** Current data state by noun/entity name */
   data: Record<string, unknown>
+  /** Route parameters (e.g., { id: 'abc123' }) */
   params: Record<string, string>
+  /** Navigation function */
   navigate: (path: string) => void
+  /** CRUD mutation handlers by noun */
   mutations: Record<string, Record<string, (...args: unknown[]) => Promise<unknown>>>
+  /** Verb action handlers by noun */
   verbs: Record<string, Record<string, (ctx: unknown) => Promise<unknown>>>
+  /** Current user for RBAC */
   user?: AppUser
+  /** Sort callback for list pages */
   onSort?: (sort: { field: string; direction: string }) => void
+  /** Permission checker function */
   checkPermission: (permission: string, context: { record: unknown }) => boolean
+  /** Whether a custom permission checker was provided */
   hasCustomPermissionCheck: boolean
+  /** Real-time connection status */
   realtimeStatus: string
+  /** Update real-time status */
   setRealtimeStatus: (status: string) => void
+  /** Update data for a noun */
   updateData: (noun: string, data: unknown) => void
+  /** Handle incoming real-time event */
   handleRealtimeEvent: (event: RealtimeEvent) => void
+  /** Customization configuration */
+  customization?: AppCustomization
 }
 
 /**
@@ -167,6 +190,10 @@ function TestProvider({
     onSetRealtimeStatus((status) => setRealtimeStatusRef.current(status))
   }, [onRealtimeEmit, onSetRealtimeStatus])
 
+  // Extract customization from app config if available
+  const appConfig = options.app as AppGeneratorConfig | undefined
+  const customization = appConfig?.customization
+
   // Create context value
   const contextValue: TestContextValue = {
     data,
@@ -182,6 +209,7 @@ function TestProvider({
     setRealtimeStatus,
     updateData,
     handleRealtimeEvent,
+    customization,
   }
 
   return createElement(TestContext.Provider, { value: contextValue }, children)

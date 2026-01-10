@@ -53,12 +53,56 @@ export type VerbHandler = (ctx: VerbContext) => void | Promise<void>
 export type VerbsConfig = Record<string, Record<string, VerbHandler>>
 
 /**
+ * App customization configuration (imported from customization module)
+ * Re-exported here for convenience
+ */
+export type { AppCustomization, FieldRenderer, AppPlugin, AppTheme, MobileConfig } from './customization'
+import type { AppCustomization } from './customization'
+
+/**
  * App configuration for generateApp()
+ *
+ * @remarks
+ * The main configuration object for generating a complete React admin app.
+ * Includes noun definitions, verb handlers, and optional customization hooks.
+ *
+ * **IMPORTANT CONSTRAINTS FOR AI/PROGRAMMATIC GENERATION:**
+ * - `name` is required and should be a valid JavaScript identifier
+ * - `nouns` must contain at least one noun definition
+ * - `verbs` is optional - defaults to empty (no custom actions)
+ * - `customization` is optional - all default behaviors are used if omitted
+ *
+ * @example
+ * ```typescript
+ * const config: AppGeneratorConfig = {
+ *   name: 'MyApp',
+ *   nouns: {
+ *     Customer: {
+ *       name: 'string',
+ *       email: 'string',
+ *     },
+ *   },
+ *   verbs: {
+ *     Customer: {
+ *       activate: async (ctx) => { ... },
+ *     },
+ *   },
+ *   customization: {
+ *     theme: { colors: { primary: '#3b82f6' } },
+ *     fieldRenderers: { markdown: myMarkdownEditor },
+ *   },
+ * }
+ * ```
  */
 export interface AppGeneratorConfig {
+  /** Application name */
   name: string
+  /** Noun definitions mapping noun names to field schemas */
   nouns: NounsConfig
+  /** Verb handlers mapping noun names to action handlers */
   verbs?: VerbsConfig
+  /** Customization hooks for overriding components, theming, etc. */
+  customization?: AppCustomization
 }
 
 /**
