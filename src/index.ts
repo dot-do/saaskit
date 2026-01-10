@@ -186,3 +186,41 @@ export type {
 
 // Utilities
 export { isNoun, noun, isVerb, verb, CRUD_VERBS, relationship, RelationshipPatterns, schedule, Schedules } from './types'
+
+// Parsers - DSL parsing utilities
+export type {
+  // Noun parsing
+  ParsedFieldType,
+  FieldDefinition,
+  NounSchema,
+  RawNounDefinitions,
+  ParsedNounDefinitions,
+  NounValidationResult,
+  // Verb parsing
+  VerbAnatomy,
+  VerbValidationResult,
+  // Relationship parsing
+  RelationDirection,
+  Cardinality,
+  ParsedRelation,
+  RelationRecord,
+} from './parsers'
+export {
+  // Noun parsing
+  parseFieldDefinition,
+  parseNounDefinitions,
+  validateNounDefinitions,
+  // Verb parsing
+  generatePastTense,
+  generateParticiple,
+  generateVerbAnatomy,
+  generateAllVerbAnatomy,
+  validateVerbDefinitions,
+  IRREGULAR_PAST,
+  // Relationship parsing
+  parseRelationshipOperator,
+  isRelationshipOperator,
+  getRelationshipOperator,
+  getRelationshipTarget,
+  RELATIONSHIP_OPERATORS,
+} from './parsers'

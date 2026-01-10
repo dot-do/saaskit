@@ -1,9 +1,22 @@
 /**
+ * Noun definition map - maps noun names to their schemas
+ * Used for generic type inference
+ */
+export type NounDefinitions = Record<string, Record<string, unknown>>
+
+/**
+ * Extract noun names from a definitions object
+ */
+export type NounNamesFrom<T extends NounDefinitions> = keyof T & string
+
+/**
  * Configuration for creating a $ context
  */
-export interface ContextConfig {
-  /** Available nouns for database operations */
+export interface ContextConfig<T extends NounDefinitions = NounDefinitions> {
+  /** Available nouns for database operations (as array of strings for runtime) */
   nouns?: string[]
+  /** Noun definitions for typed database access */
+  nounDefinitions?: T
   /** Verb definitions per noun */
   verbs?: Record<string, string[]>
   /** Input payload for verb handlers */
@@ -64,18 +77,97 @@ export interface HumanHandlers {
 }
 
 /**
- * The $ Context - runtime API for verb handlers, event handlers, and scheduled tasks
+ * AI template literal function type
  */
-export interface Context {
-  /** Database operations via noun accessors */
-  db: Record<string, NounAccessor>
+export type AIFunction = ((strings: TemplateStringsArray, ...values: unknown[]) => Promise<string>) &
+  ((prompt: string, options?: Record<string, unknown>) => Promise<string>)
 
-  /** AI template literal for generation */
-  ai: ((strings: TemplateStringsArray, ...values: unknown[]) => Promise<string>) &
-    ((prompt: string, options?: Record<string, unknown>) => Promise<string>)
+/**
+ * Agent with run method
+ */
+export type RunnableAgent = AgentDefinition & { run: (input: Record<string, unknown>) => Promise<unknown> }
 
-  /** Agent registry */
-  agents: Record<string, AgentDefinition & { run: (input: Record<string, unknown>) => Promise<unknown> }>
+/**
+ * Typed database accessor map
+ * Provides autocomplete for noun names based on the generic type parameter
+ */
+export type TypedDatabase<T extends NounDefinitions> = {
+  [K in keyof T]: NounAccessor
+}
+
+/**
+ * The $ Context - runtime API for verb handlers, event handlers, and scheduled tasks
+ *
+ * @typeParam T - Noun definitions for typed database access. When provided,
+ * $.db will have autocomplete for the defined noun names.
+ *
+ * @example
+ * ```ts
+ * // Basic usage with string array (no autocomplete)
+ * const $ = createContext({ nouns: ['Customer', 'Order'] })
+ *
+ * // Typed usage with noun definitions (has autocomplete)
+ * const $ = createContext({
+ *   nouns: ['Customer', 'Order'],
+ *   nounDefinitions: {
+ *     Customer: { name: 'string', email: 'string' },
+ *     Order: { total: 'number', status: 'string' }
+ *   }
+ * })
+ *
+ * // $.db.Customer and $.db.Order will have autocomplete
+ * ```
+ */
+export interface Context<T extends NounDefinitions = NounDefinitions> {
+  /**
+   * Database operations via noun accessors
+   *
+   * Access CRUD + search operations for each defined noun.
+   * @example
+   * ```ts
+   * await $.db.Customer.create({ name: 'John', email: 'john@example.com' })
+   * await $.db.Customer.get('cus_123')
+   * await $.db.Customer.update('cus_123', { name: 'Jane' })
+   * await $.db.Customer.delete('cus_123')
+   * await $.db.Customer.list()
+   * await $.db.Customer.find({ email: 'john@example.com' })
+   * await $.db.Customer.search('john')
+   * await $.db.Customer.semanticSearch('customers who like widgets')
+   * ```
+   */
+  db: TypedDatabase<T>
+
+  /**
+   * AI template literal for generation
+   *
+   * @example
+   * ```ts
+   * // As template literal
+   * const response = await $.ai`Write a greeting for ${name}`
+   *
+   * // As function with options
+   * const response = await $.ai('Write a greeting', { temperature: 0.7 })
+   * ```
+   */
+  ai: AIFunction
+
+  /**
+   * Agent registry
+   *
+   * Register and run AI agents with instructions and tools.
+   * @example
+   * ```ts
+   * // Register an agent
+   * $.agents.support = {
+   *   instructions: 'You are a helpful support agent',
+   *   tools: ['getCustomer', 'createTicket']
+   * }
+   *
+   * // Run the agent
+   * const result = await $.agents.support.run({ message: 'Help!' })
+   * ```
+   */
+  agents: Record<string, RunnableAgent>
 
   /** Human-in-the-loop handlers */
   human: HumanHandlers

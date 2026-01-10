@@ -14,7 +14,16 @@
  * - Schedules ($.every)
  */
 
-import type { Context, ContextConfig, NounAccessor, AgentDefinition, TimeHelpers } from '../types/context'
+import type {
+  Context,
+  ContextConfig,
+  NounAccessor,
+  AgentDefinition,
+  TimeHelpers,
+  NounDefinitions,
+  AIFunction,
+  RunnableAgent,
+} from '../types/context'
 import type {
   IntegrationConfigOptions,
   StoredIntegration,
@@ -28,8 +37,10 @@ import { VALID_CONFIG_KEYS } from '../types/integrations'
 
 /**
  * Extended context interface with integration layer methods
+ *
+ * @typeParam T - Noun definitions for typed database access
  */
-export interface ExtendedContext extends Context {
+export interface ExtendedContext<T extends NounDefinitions = NounDefinitions> extends Context<T> {
   /** Register an integration with credentials */
   integrate: (name: string, config: IntegrationConfigOptions) => void
   /** Get a registered integration */
@@ -55,22 +66,122 @@ function createNounAccessor(noun: string): NounAccessor {
 }
 
 /**
+ * Find the closest matching noun name for helpful error suggestions
+ */
+function findSimilarNoun(name: string, nouns: string[]): string | null {
+  const nameLower = name.toLowerCase()
+
+  for (const noun of nouns) {
+    const nounLower = noun.toLowerCase()
+
+    // Exact case-insensitive match
+    if (nameLower === nounLower) {
+      return noun
+    }
+
+    // Check for common typos: missing letter, extra letter, or swapped letters
+    if (Math.abs(name.length - noun.length) <= 1) {
+      let diff = 0
+      const longer = name.length >= noun.length ? nameLower : nounLower
+      const shorter = name.length < noun.length ? nameLower : nounLower
+
+      for (let i = 0; i < longer.length; i++) {
+        if (shorter[i] !== longer[i]) diff++
+        if (diff > 2) break
+      }
+
+      if (diff <= 2) return noun
+    }
+
+    // Check for plural/singular confusion
+    if (nameLower === nounLower + 's' || nameLower + 's' === nounLower) {
+      return noun
+    }
+  }
+
+  return null
+}
+
+/**
  * Create database proxy that provides noun-specific accessors
+ *
+ * Features:
+ * - Caches accessor instances for memory efficiency
+ * - Provides helpful error messages with suggestions for typos
+ * - Supports typed access when using noun definitions
  */
 function createDbProxy(nouns: string[]): Record<string, NounAccessor> {
   const nounSet = new Set(nouns)
+  // Cache for noun accessors - created on first access
+  const accessorCache = new Map<string, NounAccessor>()
 
   return new Proxy({} as Record<string, NounAccessor>, {
     get(target, prop: string) {
       if (typeof prop !== 'string') return undefined
+
+      // Check cache first for memory efficiency
+      const cached = accessorCache.get(prop)
+      if (cached) return cached
+
+      // Validate noun exists
       if (!nounSet.has(prop)) {
-        throw new Error(`Unknown noun: ${prop}. Available nouns: ${nouns.join(', ')}`)
+        // Provide helpful error message with suggestions
+        const similar = findSimilarNoun(prop, nouns)
+
+        if (similar) {
+          throw new Error(
+            `Unknown noun: "${prop}". Did you mean "${similar}"?\n` +
+              `Available nouns: ${nouns.join(', ')}`
+          )
+        }
+
+        if (nouns.length === 0) {
+          throw new Error(
+            `Unknown noun: "${prop}". No nouns have been defined.\n` +
+              `Hint: Pass nouns when creating context: createContext({ nouns: ['${prop}', ...] })`
+          )
+        }
+
+        throw new Error(
+          `Unknown noun: "${prop}".\n` +
+            `Available nouns: ${nouns.join(', ')}\n` +
+            `Hint: Make sure "${prop}" is included in the nouns array.`
+        )
       }
-      // Cache the accessor
-      if (!target[prop]) {
-        target[prop] = createNounAccessor(prop)
+
+      // Create and cache the accessor
+      const accessor = createNounAccessor(prop)
+      accessorCache.set(prop, accessor)
+      return accessor
+    },
+
+    // Support for 'in' operator: 'Customer' in $.db
+    has(target, prop: string) {
+      if (typeof prop !== 'string') return false
+      return nounSet.has(prop)
+    },
+
+    // Support for Object.keys($.db)
+    ownKeys() {
+      return Array.from(nounSet)
+    },
+
+    // Required for ownKeys to work properly
+    getOwnPropertyDescriptor(target, prop: string) {
+      if (typeof prop !== 'string' || !nounSet.has(prop)) return undefined
+
+      // Get or create accessor
+      let accessor = accessorCache.get(prop)
+      if (!accessor) {
+        accessor = createNounAccessor(prop)
+        accessorCache.set(prop, accessor)
       }
-      return target[prop]
+
+      return {
+        enumerable: true,
+        configurable: true,
+        value: accessor,
+      }
     },
   })
 }
@@ -627,8 +738,33 @@ function createEveryProxy(): Record<string, unknown> {
 
 /**
  * Create a $ context for runtime use
+ *
+ * @typeParam T - Noun definitions for typed database access
+ *
+ * Features:
+ * - Lazy initialization for $.ai, $.agents, $.human, $.api (only created on first access)
+ * - Cached accessor instances for memory efficiency
+ * - Helpful error messages with suggestions for undefined nouns
+ * - Type-safe database access when using noun definitions
+ *
+ * @example
+ * ```ts
+ * // Basic usage
+ * const $ = createContext({ nouns: ['Customer', 'Order'] })
+ *
+ * // With typed noun definitions (provides autocomplete)
+ * const $ = createContext({
+ *   nouns: ['Customer', 'Order'],
+ *   nounDefinitions: {
+ *     Customer: { name: 'string', email: 'string' },
+ *     Order: { total: 'number' }
+ *   }
+ * })
+ * ```
  */
-export function createContext(config: ContextConfig = {}): ExtendedContext {
+export function createContext<T extends NounDefinitions = NounDefinitions>(
+  config: ContextConfig<T> = {}
+): ExtendedContext<T> {
   const nouns = config.nouns ?? []
 
   // Integration registry
@@ -636,6 +772,17 @@ export function createContext(config: ContextConfig = {}): ExtendedContext {
 
   // Custom fetch function (for testing)
   let customFetch: FetchFunction = globalThis.fetch
+
+  // Lazy-initialized subsystems (only created on first access)
+  let cachedAi: AIFunction | null = null
+  let cachedAgents: Record<string, RunnableAgent> | null = null
+  let cachedHuman: ReturnType<typeof createHumanHandlers> | null = null
+  let cachedApi: Record<string, unknown> | null = null
+  let cachedDb: Record<string, NounAccessor> | null = null
+  let cachedEnv: Record<string, string | undefined> | null = null
+  let cachedTime: TimeHelpers | null = null
+  let cachedOn: Record<string, Record<string, (handler: Function) => void>> | null = null
+  let cachedEvery: Record<string, unknown> | null = null
 
   /**
    * Register an integration with validation
@@ -667,6 +814,9 @@ export function createContext(config: ContextConfig = {}): ExtendedContext {
       name,
       config: integrationConfig,
     })
+
+    // Clear API cache so new integration is available
+    cachedApi = null
   }
 
   /**
@@ -681,21 +831,12 @@ export function createContext(config: ContextConfig = {}): ExtendedContext {
    */
   function setFetch(fetchFn: FetchFunction): void {
     customFetch = fetchFn
+    // Clear API cache so new fetch function is used
+    cachedApi = null
   }
 
-  const context: ExtendedContext = {
-    // Database operations
-    db: createDbProxy(nouns),
-
-    // AI template literal
-    ai: createAiFunction(),
-
-    // Agent registry
-    agents: createAgentsProxy(),
-
-    // Human-in-the-loop
-    human: createHumanHandlers(),
-
+  // Use Object.defineProperty for proper getter behavior on the context object
+  const context = {
     // Fire and forget (durable)
     send: (event: string, data?: Record<string, unknown>) => {
       // Noop - fire and forget returns void
@@ -707,34 +848,129 @@ export function createContext(config: ContextConfig = {}): ExtendedContext {
       return Promise.resolve({})
     },
 
-    // Integration access (lazy creation to capture integrations state)
-    get api() {
-      return createApiProxy(integrations, () => customFetch)
-    },
-
-    // Runtime context
+    // Runtime context (static values, no lazy init needed)
     input: config.input ?? {},
     record: config.record,
     id: config.id,
     user: config.user,
     org: config.org,
 
-    // Environment variables (read-only proxy)
-    env: createEnvProxy(),
-
-    time: createTimeHelpers(),
-
-    // Event handlers
-    on: createOnProxy(nouns, config.verbs),
-
-    // Schedule registration
-    every: createEveryProxy(),
-
     // Integration layer methods
     integrate,
     getIntegration,
     setFetch,
-  }
+  } as ExtendedContext<T>
+
+  // Define lazy-initialized properties using getters
+  Object.defineProperties(context, {
+    // Database operations - lazy initialized
+    db: {
+      get() {
+        if (!cachedDb) {
+          cachedDb = createDbProxy(nouns)
+        }
+        return cachedDb
+      },
+      enumerable: true,
+      configurable: true,
+    },
+
+    // AI template literal - lazy initialized
+    ai: {
+      get() {
+        if (!cachedAi) {
+          cachedAi = createAiFunction()
+        }
+        return cachedAi
+      },
+      enumerable: true,
+      configurable: true,
+    },
+
+    // Agent registry - lazy initialized
+    agents: {
+      get() {
+        if (!cachedAgents) {
+          cachedAgents = createAgentsProxy()
+        }
+        return cachedAgents
+      },
+      enumerable: true,
+      configurable: true,
+    },
+
+    // Human-in-the-loop - lazy initialized
+    human: {
+      get() {
+        if (!cachedHuman) {
+          cachedHuman = createHumanHandlers()
+        }
+        return cachedHuman
+      },
+      enumerable: true,
+      configurable: true,
+    },
+
+    // Integration access - lazy initialized
+    api: {
+      get() {
+        if (!cachedApi) {
+          cachedApi = createApiProxy(integrations, () => customFetch)
+        }
+        return cachedApi
+      },
+      enumerable: true,
+      configurable: true,
+    },
+
+    // Environment variables - lazy initialized
+    env: {
+      get() {
+        if (!cachedEnv) {
+          cachedEnv = createEnvProxy()
+        }
+        return cachedEnv
+      },
+      enumerable: true,
+      configurable: true,
+    },
+
+    // Time helpers - lazy initialized
+    time: {
+      get() {
+        if (!cachedTime) {
+          cachedTime = createTimeHelpers()
+        }
+        return cachedTime
+      },
+      enumerable: true,
+      configurable: true,
+    },
+
+    // Event handlers - lazy initialized
+    on: {
+      get() {
+        if (!cachedOn) {
+          cachedOn = createOnProxy(nouns, config.verbs)
+        }
+        return cachedOn
+      },
+      enumerable: true,
+      configurable: true,
+    },
+
+    // Schedule registration - lazy initialized
+    every: {
+      get() {
+        if (!cachedEvery) {
+          cachedEvery = createEveryProxy()
+        }
+        return cachedEvery
+      },
+      enumerable: true,
+      configurable: true,
+    },
+  })
 
   return context
 }

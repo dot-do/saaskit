@@ -1,45 +1,13 @@
 import type { ReactNode, ReactElement } from 'react'
 import * as React from 'react'
-
-/**
- * Parsed field type information
- */
-interface ParsedFieldType {
-  type: string
-  optional: boolean
-}
-
-/**
- * Parsed relation type information
- */
-interface ParsedRelation {
-  type: 'relation'
-  target: string
-  direction: 'forward' | 'reverse' | 'semantic' | 'reverse-semantic'
-  cardinality: 'one' | 'many'
-}
-
-/**
- * Relation record for tracking all parsed relations
- */
-interface RelationRecord {
-  from: string
-  to: string
-  field: string
-  type: 'forward' | 'reverse' | 'semantic' | 'reverse-semantic'
-  cardinality: 'one' | 'many'
-}
-
-/**
- * Verb anatomy - all the forms of a verb
- */
-interface VerbAnatomy {
-  action: string // imperative: "pay"
-  activity: string // present participle: "paying"
-  event: string // past tense: "paid"
-  reverse: string // reverse action: "unpay"
-  inverse: string // inverse state: "unpaid"
-}
+import {
+  parseFieldDefinition,
+  generateVerbAnatomy,
+  type ParsedFieldType,
+  type ParsedRelation,
+  type RelationRecord,
+  type VerbAnatomy,
+} from '../parsers'
 
 /**
  * Schedule handler function
@@ -143,192 +111,18 @@ export interface SaaSConfig {
 export type SaaSComponent = (props: SaaSChildrenProps) => ReactElement
 
 // =====================================================
-// Field Type Parsing
-// =====================================================
-
-/**
- * Parse a field type string into structured type info
- * Examples:
- * - 'string' -> { type: 'string', optional: false }
- * - 'markdown?' -> { type: 'markdown', optional: true }
- * - '->Customer' -> relation
- */
-function parseFieldType(
-  fieldType: string | string[],
-  nounName: string,
-  fieldName: string,
-  relations: RelationRecord[]
-): ParsedFieldType | ParsedRelation {
-  // Handle array types (many relations)
-  if (Array.isArray(fieldType)) {
-    const innerType = fieldType[0]
-    return parseRelationType(innerType, nounName, fieldName, 'many', relations)
-  }
-
-  // Check for relation operators
-  if (
-    fieldType.startsWith('->') ||
-    fieldType.startsWith('<-') ||
-    fieldType.startsWith('~>') ||
-    fieldType.startsWith('<~')
-  ) {
-    return parseRelationType(fieldType, nounName, fieldName, 'one', relations)
-  }
-
-  // Simple type with optional marker
-  const optional = fieldType.endsWith('?')
-  const type = optional ? fieldType.slice(0, -1) : fieldType
-
-  return { type, optional }
-}
-
-/**
- * Parse a relation type string
- */
-function parseRelationType(
-  fieldType: string,
-  nounName: string,
-  fieldName: string,
-  cardinality: 'one' | 'many',
-  relations: RelationRecord[]
-): ParsedRelation {
-  let direction: 'forward' | 'reverse' | 'semantic' | 'reverse-semantic'
-  let target: string
-
-  if (fieldType.startsWith('->')) {
-    direction = 'forward'
-    target = fieldType.slice(2)
-  } else if (fieldType.startsWith('<-')) {
-    direction = 'reverse'
-    target = fieldType.slice(2)
-  } else if (fieldType.startsWith('~>')) {
-    direction = 'semantic'
-    target = fieldType.slice(2)
-  } else if (fieldType.startsWith('<~')) {
-    direction = 'reverse-semantic'
-    target = fieldType.slice(2)
-  } else {
-    throw new Error(`Unknown relation operator in: ${fieldType}`)
-  }
-
-  // Track the relation
-  relations.push({
-    from: nounName,
-    to: target,
-    field: fieldName,
-    type: direction,
-    cardinality,
-  })
-
-  return {
-    type: 'relation',
-    target,
-    direction,
-    cardinality,
-  }
-}
-
-// =====================================================
-// Verb Anatomy Generation
-// =====================================================
-
-/**
- * Irregular verb past tenses
- */
-const IRREGULAR_PAST: Record<string, string> = {
-  pay: 'paid',
-  buy: 'bought',
-  sell: 'sold',
-  send: 'sent',
-  make: 'made',
-  get: 'got',
-  run: 'ran',
-  begin: 'begun',
-  do: 'done',
-  go: 'gone',
-  see: 'seen',
-  take: 'taken',
-  give: 'given',
-  write: 'written',
-  read: 'read',
-  set: 'set',
-  put: 'put',
-  cut: 'cut',
-  let: 'let',
-  hit: 'hit',
-}
-
-/**
- * Generate the past tense of a verb
- */
-function generatePastTense(verb: string): string {
-  // Check for irregular verbs
-  if (IRREGULAR_PAST[verb]) {
-    return IRREGULAR_PAST[verb]
-  }
-
-  // Regular verb rules
-  if (verb.endsWith('e')) {
-    return verb + 'd'
-  }
-
-  // Consonant + y -> ied
-  if (verb.endsWith('y') && !/[aeiou]/.test(verb.charAt(verb.length - 2))) {
-    return verb.slice(0, -1) + 'ied'
-  }
-
-  // Double consonant for short verbs ending in consonant
-  if (verb.length <= 4 && /[bcdfghjklmnpqrstvwxz]$/.test(verb) && /[aeiou]/.test(verb.charAt(verb.length - 2))) {
-    return verb + verb.charAt(verb.length - 1) + 'ed'
-  }
-
-  return verb + 'ed'
-}
-
-/**
- * Generate the present participle (-ing form) of a verb
- */
-function generateParticiple(verb: string): string {
-  // Ends in 'e' (not 'ee') -> drop e, add ing
-  if (verb.endsWith('e') && !verb.endsWith('ee')) {
-    return verb.slice(0, -1) + 'ing'
-  }
-
-  // Ends in 'ie' -> change to 'ying'
-  if (verb.endsWith('ie')) {
-    return verb.slice(0, -2) + 'ying'
-  }
-
-  // Double consonant for short verbs
-  if (verb.length <= 4 && /[bcdfghjklmnpqrstvwxz]$/.test(verb) && /[aeiou]/.test(verb.charAt(verb.length - 2))) {
-    return verb + verb.charAt(verb.length - 1) + 'ing'
-  }
-
-  return verb + 'ing'
-}
-
-/**
- * Generate complete verb anatomy
- */
-function generateVerbAnatomy(verb: string): VerbAnatomy {
-  const event = generatePastTense(verb)
-  const activity = generateParticiple(verb)
-
-  return {
-    action: verb,
-    activity,
-    event,
-    reverse: 'un' + verb,
-    inverse: 'un' + event,
-  }
-}
-
-// =====================================================
 // Context Creation
 // =====================================================
 
 /**
- * Create the $ context for the SaaS children function
+ * Create the $ context for the SaaS children function.
+ *
+ * This function orchestrates the parsing of nouns and verbs by delegating
+ * to the appropriate parser modules:
+ * - Noun parsing: Uses parseFieldDefinition from noun-parser
+ * - Verb parsing: Uses generateVerbAnatomy from verb-parser
+ *
+ * @returns The SaaS context object ($)
  */
 function createContext(): SaaSContext {
   const registeredNouns: Record<string, Record<string, ParsedFieldType | ParsedRelation>> = {}
@@ -375,14 +169,21 @@ function createContext(): SaaSContext {
 
   const context: SaaSContext = {
     nouns: (definitions) => {
+      // Delegate parsing to the noun-parser module
       for (const [nounName, fields] of Object.entries(definitions)) {
         registeredNouns[nounName] = {}
         for (const [fieldName, fieldType] of Object.entries(fields)) {
-          registeredNouns[nounName][fieldName] = parseFieldType(fieldType, nounName, fieldName, parsedRelations)
+          registeredNouns[nounName][fieldName] = parseFieldDefinition(
+            fieldType,
+            nounName,
+            fieldName,
+            parsedRelations
+          )
         }
       }
     },
     verbs: (handlers) => {
+      // Delegate anatomy generation to the verb-parser module
       for (const [nounName, verbs] of Object.entries(handlers)) {
         registeredVerbs[nounName] = verbs
         verbAnatomy[nounName] = {}
@@ -407,27 +208,6 @@ function createContext(): SaaSContext {
 // =====================================================
 // SaaS Component / Function
 // =====================================================
-
-/**
- * Internal React component that handles JSX rendering
- */
-function SaaSComponent({ name, children }: SaaSChildrenProps): ReactElement {
-  // Create the context
-  const ctx = createContext()
-
-  // Execute the children function to register nouns, verbs, etc.
-  children(ctx)
-
-  // Return JSX element
-  return React.createElement(
-    'div',
-    {
-      'data-saas-name': name,
-      'data-saas-admin': true,
-    },
-    null
-  )
-}
 
 /**
  * Detect if we're being called from within React's render cycle
@@ -456,6 +236,12 @@ function isInReactRender(): boolean {
  * Can be used as:
  * 1. JSX Component: <SaaS name="MyApp">{$ => { ... }}</SaaS>
  * 2. Function call: SaaS({ name: 'MyApp', children: $ => { ... } })
+ *
+ * The SaaS component is a thin orchestration layer that delegates parsing
+ * to specialized modules:
+ * - `parsers/noun-parser`: Parses field definitions and validates nouns
+ * - `parsers/verb-parser`: Generates verb anatomy and validates verbs
+ * - `parsers/relationship-parser`: Parses relationship operators
  *
  * @example JSX usage
  * ```tsx

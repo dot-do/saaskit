@@ -3,9 +3,48 @@
  *
  * This module provides the Database.do integration for SaaSkit.
  * Implements in-memory storage for development, with typed accessors per noun.
+ *
+ * ## Features
+ *
+ * - **Schema Definition**: Define nouns with field types and relationships
+ * - **CRUD Operations**: Create, read, update, delete operations per noun
+ * - **Relationships**: Support for forward (`->`, `~>`) and backward (`<-`, `<~`) relationships
+ * - **Search**: Full-text and semantic search capabilities
+ * - **Performance**: Query batching, caching, and index suggestions
+ *
+ * ## Usage
+ *
+ * ```ts
+ * import { createSaaS } from '@saaskit/database'
+ *
+ * const $ = createSaaS()
+ *
+ * $.nouns({
+ *   Customer: {
+ *     name: 'string',
+ *     email: 'string',
+ *     plan: '->Plan',
+ *   },
+ *   Plan: {
+ *     name: 'string',
+ *     price: 'number',
+ *   },
+ * })
+ *
+ * // Use typed database accessors
+ * const customer = await $.db.Customer.create({
+ *   name: 'John',
+ *   email: 'john@example.com'
+ * })
+ * ```
+ *
+ * @module database
  */
 
 export * from './types'
+export * from './batcher'
+export * from './cache'
+export * from './indexes'
 
 import type {
   NounDefinitions,
@@ -19,17 +58,63 @@ import type {
 } from './types'
 
 /**
- * Relationship operator patterns
+ * Valid relationship operator patterns for noun field definitions.
+ *
+ * - `->` Forward exact: Owner side of a relationship (e.g., Order belongs to Customer)
+ * - `~>` Forward fuzzy: Semantic match or auto-create relationship
+ * - `<-` Backward exact: Referenced side of a relationship (e.g., Customer has many Orders)
+ * - `<~` Backward fuzzy: Semantic reverse relationship
+ *
+ * @internal
  */
 const RELATIONSHIP_OPERATORS = ['->', '~>', '<-', '<~'] as const
+
+/**
+ * Union type of valid relationship operators
+ * @internal
+ */
 type RelOp = (typeof RELATIONSHIP_OPERATORS)[number]
 
 /**
- * Parse a field definition to extract relationship info
+ * Parse result from field definition analysis
+ * @internal
  */
-function parseFieldDefinition(
-  field: FieldDefinition
-): { isRelationship: boolean; operator?: RelOp; targetNoun?: string; isArray: boolean } {
+interface ParsedFieldDefinition {
+  /** Whether this field represents a relationship to another noun */
+  isRelationship: boolean
+  /** The relationship operator if present */
+  operator?: RelOp
+  /** The target noun name for relationships */
+  targetNoun?: string
+  /** Whether this is an array field (e.g., ['->Product']) */
+  isArray: boolean
+}
+
+/**
+ * Parse a field definition to extract relationship information
+ *
+ * Handles primitive types, optional fields, union types, and relationship
+ * definitions with various operators.
+ *
+ * @param field - The field definition string or array
+ * @returns Parsed field information including relationship details
+ *
+ * @example
+ * ```ts
+ * parseFieldDefinition('string')
+ * // { isRelationship: false, isArray: false }
+ *
+ * parseFieldDefinition('->Customer')
+ * // { isRelationship: true, operator: '->', targetNoun: 'Customer', isArray: false }
+ *
+ * parseFieldDefinition(['->Product'])
+ * // { isRelationship: true, operator: '->', targetNoun: 'Product', isArray: true }
+ * ```
+ *
+ * @throws {Error} If an invalid relationship operator is detected
+ * @internal
+ */
+function parseFieldDefinition(field: FieldDefinition): ParsedFieldDefinition {
   // Handle array field definitions
   if (Array.isArray(field)) {
     const inner = parseFieldDefinition(field[0])
@@ -57,7 +142,30 @@ function parseFieldDefinition(
 }
 
 /**
- * Validate noun definitions for relationships
+ * Validate noun definitions for relationship integrity
+ *
+ * Ensures all relationship fields reference nouns that are defined
+ * in the same schema. Throws an error if a relationship points to
+ * an undefined noun.
+ *
+ * @param definitions - The complete noun definitions to validate
+ * @throws {Error} If a relationship references an undefined noun
+ *
+ * @example
+ * ```ts
+ * // Valid - Plan is defined
+ * validateNounDefinitions({
+ *   Customer: { plan: '->Plan' },
+ *   Plan: { name: 'string' },
+ * })
+ *
+ * // Invalid - throws error
+ * validateNounDefinitions({
+ *   Customer: { plan: '->Plan' }, // Plan not defined!
+ * })
+ * ```
+ *
+ * @internal
  */
 function validateNounDefinitions(definitions: NounDefinitions): void {
   const nounNames = new Set(Object.keys(definitions))
@@ -78,7 +186,22 @@ function validateNounDefinitions(definitions: NounDefinitions): void {
 }
 
 /**
- * Generate a random ID with optional prefix
+ * Generate a random alphanumeric ID with optional prefix
+ *
+ * Creates a 12-character random string using lowercase letters and digits.
+ * If a prefix is provided, it's prepended with an underscore separator.
+ *
+ * @param prefix - Optional prefix for the ID (e.g., 'cust' -> 'cust_abc123xyz456')
+ * @returns A random ID string
+ *
+ * @example
+ * ```ts
+ * generateId()          // 'abc123xyz456'
+ * generateId('cust')    // 'cust_abc123xyz456'
+ * generateId('order')   // 'order_def456uvw789'
+ * ```
+ *
+ * @internal
  */
 function generateId(prefix?: string): string {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
@@ -90,7 +213,25 @@ function generateId(prefix?: string): string {
 }
 
 /**
- * Create a database accessor for a single noun
+ * Create a database accessor for a single noun type
+ *
+ * Returns an object with CRUD operations (create, get, update, delete),
+ * list/find operations, and search capabilities for the specified noun.
+ *
+ * The accessor manages an in-memory Map storage and handles:
+ * - Auto-generated IDs with noun-based prefixes
+ * - Timestamps (createdAt, updatedAt)
+ * - Backward relationship resolution
+ * - Full-text and semantic search
+ *
+ * @typeParam T - The record type (extends BaseRecord)
+ * @param nounName - The name of the noun (e.g., 'Customer')
+ * @param _schema - The noun's schema definition (currently unused, reserved for validation)
+ * @param storage - The shared storage Map for all nouns
+ * @param allDefinitions - All noun definitions (needed for relationship resolution)
+ * @returns A DatabaseAccessor instance with typed operations
+ *
+ * @internal
  */
 function createDatabaseAccessor<T extends BaseRecord>(
   nounName: string,
@@ -267,6 +408,78 @@ function createDatabaseAccessor<T extends BaseRecord>(
 /**
  * Create a new SaaS context with database layer
  *
+ * Creates an isolated SaaS context with its own storage and noun definitions.
+ * The returned object provides:
+ *
+ * - `$.nouns()` - Define noun schemas with relationships
+ * - `$.db` - Access typed database accessors for CRUD operations
+ *
+ * ## Schema Definition
+ *
+ * Use `$.nouns()` to define your data model with field types and relationships:
+ *
+ * ```ts
+ * $.nouns({
+ *   Customer: {
+ *     name: 'string',           // Required string
+ *     email: 'string',          // Required string
+ *     age: 'number?',           // Optional number
+ *     status: 'active | inactive', // Union type
+ *     plan: '->Plan',           // Forward relationship to Plan
+ *     orders: ['<-Order'],      // Backward relationship from Order
+ *   },
+ *   Plan: {
+ *     name: 'string',
+ *     price: 'number',
+ *   },
+ *   Order: {
+ *     customer: '->Customer',   // Forward relationship
+ *     items: ['->Product'],     // Array of relationships
+ *     total: 'number',
+ *   },
+ * })
+ * ```
+ *
+ * ## CRUD Operations
+ *
+ * Each noun gets a typed accessor with standard operations:
+ *
+ * ```ts
+ * // Create
+ * const customer = await $.db.Customer.create({
+ *   name: 'John',
+ *   email: 'john@example.com'
+ * })
+ *
+ * // Read
+ * const found = await $.db.Customer.get(customer.id)
+ *
+ * // Update
+ * const updated = await $.db.Customer.update(customer.id, {
+ *   name: 'John Doe'
+ * })
+ *
+ * // Delete
+ * await $.db.Customer.delete(customer.id)
+ *
+ * // List all
+ * const all = await $.db.Customer.list()
+ *
+ * // List with pagination
+ * const page = await $.db.Customer.list({ limit: 10, offset: 20 })
+ *
+ * // Find by filter
+ * const active = await $.db.Customer.find({ status: 'active' })
+ *
+ * // Full-text search
+ * const results = await $.db.Customer.search('john')
+ *
+ * // Semantic search
+ * const semantic = await $.db.Customer.semanticSearch('enterprise customers')
+ * ```
+ *
+ * @returns A SaaSContext with `nouns()` and `db` properties
+ *
  * @example
  * ```ts
  * const $ = createSaaS()
@@ -284,7 +497,10 @@ function createDatabaseAccessor<T extends BaseRecord>(
  * })
  *
  * // Then use via $.db:
- * const customer = await $.db.Customer.create({ name: 'John', email: 'john@example.com' })
+ * const customer = await $.db.Customer.create({
+ *   name: 'John',
+ *   email: 'john@example.com'
+ * })
  * ```
  */
 export function createSaaS(): SaaSContext {

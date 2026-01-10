@@ -9,6 +9,12 @@
  * - $.agent(name, config) - Agent registration
  * - $.agents.name.run(input) - Agent execution
  * - $.human.approve/ask/review - Human-in-the-loop
+ *
+ * Production infrastructure (advanced usage):
+ * - Model selection: selectModel, getModel, listModels
+ * - Response caching: generateCacheKey, getCachedResponse, setCachedResponse
+ * - Cost tracking: trackUsage, getUsageStats, estimateTokens
+ * - Fallback handling: withFallback, withRetry, isRateLimitError
  */
 
 // ============================================================================
@@ -545,3 +551,63 @@ export const human = {
   pending,
   cancel,
 }
+
+// ============================================================================
+// Production Infrastructure Re-exports
+// ============================================================================
+
+// Model selection
+export {
+  selectModel,
+  getModel,
+  listModels,
+  modelSupports,
+  DEFAULT_MODELS,
+  DEFAULT_MODEL,
+  type ModelConfig,
+  type ModelSelectionOptions,
+} from './models'
+
+// Response caching
+export {
+  generateCacheKey,
+  getCachedResponse,
+  setCachedResponse,
+  deleteCachedResponse,
+  clearCache,
+  getCacheStats,
+  cleanupExpiredEntries,
+  getOrSet,
+  type CacheEntry,
+  type CacheStats,
+  type CacheOptions,
+} from './cache'
+
+// Cost tracking
+export {
+  trackUsage,
+  getUsageStats,
+  getUsageForPeriod,
+  getRecentUsage,
+  clearUsageHistory,
+  getUsageByTags,
+  estimateTokens,
+  calculateCost,
+  type CostEntry,
+  type UsageStats,
+  type CostConfig,
+} from './costs'
+
+// Fallback handling
+export {
+  withFallback,
+  withRetry,
+  createFallbackHandler,
+  isRateLimitError,
+  isTimeoutError,
+  isTransientError,
+  shouldFallbackToAnotherModel,
+  calculateRetryDelay,
+  type FallbackConfig,
+  type RetryOptions,
+} from './fallback'
