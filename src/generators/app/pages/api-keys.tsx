@@ -59,23 +59,25 @@ export function createAPIKeysPage(config: AppGeneratorConfig): ComponentType<unk
     // Title
     children.push(createElement('h1', { key: 'title' }, 'API Keys'))
 
-    // Create button (outside modal)
-    children.push(
-      createElement(
-        'button',
-        {
-          key: 'create-btn',
-          type: 'button',
-          onClick: () => {
-            setShowCreateModal(true)
-            setCreatedKey(null)
-            setNewKeyName('')
-            setSelectedScopes([])
+    // Create button (outside modal) - only shown when modal is closed
+    if (!showCreateModal) {
+      children.push(
+        createElement(
+          'button',
+          {
+            key: 'create-btn',
+            type: 'button',
+            onClick: () => {
+              setShowCreateModal(true)
+              setCreatedKey(null)
+              setNewKeyName('')
+              setSelectedScopes([])
+            },
           },
-        },
-        'Create Key'
+          'Create Key'
+        )
       )
-    )
+    }
 
     // Existing keys list
     if (apiKeys && apiKeys.length > 0) {
@@ -156,7 +158,7 @@ export function createAPIKeysPage(config: AppGeneratorConfig): ComponentType<unk
           createElement(
             'button',
             { key: 'create', type: 'button', onClick: handleCreateKey },
-            'Generate Key'
+            'Generate'
           )
         )
       }

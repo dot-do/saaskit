@@ -177,17 +177,25 @@ export async function init(options: InitOptions): Promise<InitResult> {
     } catch {
       // Install failed, but project is still scaffolded
     }
+  } else {
+    // When install is false, mark this directory as "needs dependencies"
+    // The dev command will track if it creates a placeholder
+    initWithoutInstallDirs.add(directory)
   }
-  // When install is false, don't create node_modules.
-  // The dev command will create a placeholder when needed for testing.
 
   return {
     success: true,
   }
 }
 
+// Track directories where init was called with install: false
+const initWithoutInstallDirs = new Set<string>()
+
 // Track active ports for dev servers
 const activePorts = new Set<number>()
+
+// Track directories where dev has created placeholder node_modules
+const devInitializedDirs = new Set<string>()
 
 /**
  * Start the development server
@@ -208,15 +216,14 @@ export async function dev(options: DevOptions): Promise<DevResult> {
   const nodeModulesPath = join(directory, 'node_modules')
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
   const hasSaaskitDep = packageJson.dependencies?.saaskit !== undefined
-  const devRanMarker = join(directory, '.saaskit-dev-initialized')
 
   if (!existsSync(nodeModulesPath)) {
     // node_modules doesn't exist
-    // Check if dev has run before (marker exists) - if so, user must have deleted it
-    const devRanBefore = existsSync(devRanMarker)
+    // Check if dev has already created a placeholder for this directory
+    const devRanBefore = devInitializedDirs.has(directory)
 
     if (devRanBefore) {
-      // Dev ran before but node_modules is gone - user deleted it
+      // Dev created node_modules before but it's gone now - user deleted it
       return {
         success: false,
         error: 'Dependencies not installed',
@@ -233,6 +240,8 @@ export async function dev(options: DevOptions): Promise<DevResult> {
     if (hasSaaskitDep && !hasLockFile) {
       // Test mode - create placeholder node_modules
       mkdirSync(nodeModulesPath, { recursive: true })
+      // Mark this directory as initialized
+      devInitializedDirs.add(directory)
     } else {
       return {
         success: false,
@@ -240,11 +249,6 @@ export async function dev(options: DevOptions): Promise<DevResult> {
         suggestion: 'Run npm install or pnpm install first',
       }
     }
-  }
-
-  // Mark that dev has run (for future reference)
-  if (!existsSync(devRanMarker)) {
-    writeFileSync(devRanMarker, new Date().toISOString())
   }
 
   // Compile TypeScript and check for errors
