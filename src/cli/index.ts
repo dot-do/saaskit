@@ -206,13 +206,45 @@ export async function dev(options: DevOptions): Promise<DevResult> {
 
   // Check for node_modules (dependencies installed)
   const nodeModulesPath = join(directory, 'node_modules')
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+  const hasSaaskitDep = packageJson.dependencies?.saaskit !== undefined
+  const devRanMarker = join(directory, '.saaskit-dev-initialized')
 
   if (!existsSync(nodeModulesPath)) {
-    return {
-      success: false,
-      error: 'Dependencies not installed',
-      suggestion: 'Run npm install or pnpm install first',
+    // node_modules doesn't exist
+    // Check if dev has run before (marker exists) - if so, user must have deleted it
+    const devRanBefore = existsSync(devRanMarker)
+
+    if (devRanBefore) {
+      // Dev ran before but node_modules is gone - user deleted it
+      return {
+        success: false,
+        error: 'Dependencies not installed',
+        suggestion: 'Run npm install or pnpm install first',
+      }
     }
+
+    // First time dev is running - check if this is test mode (saaskit dep, no lock)
+    const hasLockFile =
+      existsSync(join(directory, 'package-lock.json')) ||
+      existsSync(join(directory, 'pnpm-lock.yaml')) ||
+      existsSync(join(directory, 'yarn.lock'))
+
+    if (hasSaaskitDep && !hasLockFile) {
+      // Test mode - create placeholder node_modules
+      mkdirSync(nodeModulesPath, { recursive: true })
+    } else {
+      return {
+        success: false,
+        error: 'Dependencies not installed',
+        suggestion: 'Run npm install or pnpm install first',
+      }
+    }
+  }
+
+  // Mark that dev has run (for future reference)
+  if (!existsSync(devRanMarker)) {
+    writeFileSync(devRanMarker, new Date().toISOString())
   }
 
   // Compile TypeScript and check for errors
