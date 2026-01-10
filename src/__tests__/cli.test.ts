@@ -596,6 +596,9 @@ describe('CLI: npx saaskit dev', () => {
     })
 
     it('should provide helpful error for missing dependencies', async () => {
+      // Add a lock file to simulate a real project (not test mode)
+      writeFileSync(join(testDir, 'pnpm-lock.yaml'), 'lockfileVersion: 9\n')
+
       // Remove node_modules
       const nodeModulesPath = join(testDir, 'node_modules')
       if (existsSync(nodeModulesPath)) {
