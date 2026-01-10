@@ -9,7 +9,7 @@ import type { RenderOptions, RenderResult, RealtimeEvent, AppUser } from './type
 
 // Re-export screen, waitFor, fireEvent from @testing-library/react
 export { screen, waitFor, fireEvent } from '@testing-library/react'
-import { render } from '@testing-library/react'
+import { render, act } from '@testing-library/react'
 
 /**
  * Internal context for test state management
@@ -210,12 +210,16 @@ export function renderWithProviders(
     container: result.container,
     realtimeEmit: (event: RealtimeEvent) => {
       if (realtimeEmitCallback) {
-        realtimeEmitCallback(event)
+        act(() => {
+          realtimeEmitCallback(event)
+        })
       }
     },
     setRealtimeStatus: (status: string) => {
       if (setRealtimeStatusCallback) {
-        setRealtimeStatusCallback(status)
+        act(() => {
+          setRealtimeStatusCallback(status)
+        })
       }
     },
   }

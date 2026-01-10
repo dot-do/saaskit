@@ -156,7 +156,7 @@ export function createAPIKeysPage(config: AppGeneratorConfig): ComponentType<unk
           createElement(
             'button',
             { key: 'create', type: 'button', onClick: handleCreateKey },
-            'Create'
+            'Generate'
           )
         )
       }

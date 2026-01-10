@@ -140,7 +140,13 @@ export function createShowPage(
         const isAllowed = isVerbAllowed(verb)
         const isExecuting = executingVerb === verb
 
-        // Always show button, but disable if no permission or not allowed
+        // If custom checkPermission is provided, show button but maybe disabled
+        // If using user.permissions, hide button when no permission
+        const hasCustomPermissionCheck = !!checkPermission
+        if (!hasCustomPermissionCheck && !canExecute) {
+          continue // Hide button when using user.permissions and no permission
+        }
+
         children.push(
           createElement(
             'button',

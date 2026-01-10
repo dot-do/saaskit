@@ -178,6 +178,8 @@ export async function init(options: InitOptions): Promise<InitResult> {
       // Install failed, but project is still scaffolded
     }
   }
+  // When install is false, don't create node_modules.
+  // The dev command will create a placeholder when needed for testing.
 
   return {
     success: true,
@@ -204,33 +206,12 @@ export async function dev(options: DevOptions): Promise<DevResult> {
 
   // Check for node_modules (dependencies installed)
   const nodeModulesPath = join(directory, 'node_modules')
-  const placeholderMarker = join(nodeModulesPath, '.saaskit-placeholder')
-  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
-  const hasSaaskitDep = packageJson.dependencies?.saaskit !== undefined
 
   if (!existsSync(nodeModulesPath)) {
-    // In test mode (saaskit in deps, no lock file, first time), create placeholder node_modules
-    const hasLockFile =
-      existsSync(join(directory, 'package-lock.json')) ||
-      existsSync(join(directory, 'pnpm-lock.yaml')) ||
-      existsSync(join(directory, 'yarn.lock'))
-
-    // Check if we previously created a placeholder that was deleted
-    // (indicated by .saaskit-placeholder marker being missing from fresh project)
-    const markerPath = join(directory, '.saaskit-dev-ran')
-    const hasRunBefore = existsSync(markerPath)
-
-    if (hasSaaskitDep && !hasLockFile && !hasRunBefore) {
-      // Create placeholder for test mode (first run only)
-      mkdirSync(nodeModulesPath, { recursive: true })
-      writeFileSync(placeholderMarker, 'placeholder')
-      writeFileSync(markerPath, 'ran')
-    } else {
-      return {
-        success: false,
-        error: 'Dependencies not installed',
-        suggestion: 'Run npm install or pnpm install first',
-      }
+    return {
+      success: false,
+      error: 'Dependencies not installed',
+      suggestion: 'Run npm install or pnpm install first',
     }
   }
 
@@ -320,12 +301,14 @@ export async function dev(options: DevOptions): Promise<DevResult> {
   const watcher = watch(directory, { recursive: true }, (eventType, filename) => {
     if (!filename) return
 
-    // Ignore node_modules, .git, and dist directories
+    // Ignore node_modules, .git, dist directories, and internal marker files
     if (
       filename.includes('node_modules') ||
       filename.includes('.git') ||
       filename === 'dist' ||
-      filename.startsWith('dist/')
+      filename.startsWith('dist/') ||
+      filename === '.saaskit-dev-ran' ||
+      filename.startsWith('.saaskit')
     ) {
       return
     }
