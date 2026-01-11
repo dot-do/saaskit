@@ -10,6 +10,17 @@
  */
 export interface DbProxyConfig<TAccessor> {
   /**
+   * Function to check if nouns have been initialized at all.
+   * If provided and returns false, notInitializedError will be thrown.
+   */
+  isInitialized?: () => boolean
+
+  /**
+   * Error message when nouns haven't been initialized
+   */
+  notInitializedError?: string
+
+  /**
    * Function to check if a noun is registered
    */
   isRegistered: (nounName: string) => boolean

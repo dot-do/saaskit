@@ -14,6 +14,7 @@ import {
   type BuiltInNounName,
   mergeWithBuiltIn,
 } from './built-ins'
+import { createDbProxy as createDbProxyUtil } from '../database/proxy'
 
 /**
  * Options for createSaaS
@@ -478,32 +479,13 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
   }
 
   /**
-   * Create DB proxy with lazy accessor creation
+   * Create DB proxy with lazy accessor creation using shared utility
    */
   function createDbProxy(): Record<string, DbAccessor | undefined> {
-    const accessorCache = new Map<string, DbAccessor>()
-
-    return new Proxy({} as Record<string, DbAccessor | undefined>, {
-      get(target, prop: string) {
-        if (typeof prop !== 'string') return undefined
-
-        // Return undefined if noun is not registered (withBuiltIns: false case)
-        if (!(prop in registeredNouns)) {
-          return undefined
-        }
-
-        let accessor = accessorCache.get(prop)
-        if (!accessor) {
-          accessor = createDbAccessor(prop)
-          accessorCache.set(prop, accessor)
-        }
-        return accessor
-      },
-
-      has(target, prop: string) {
-        if (typeof prop !== 'string') return false
-        return prop in registeredNouns
-      },
+    return createDbProxyUtil<DbAccessor>({
+      isRegistered: (nounName) => nounName in registeredNouns,
+      createAccessor: createDbAccessor,
+      getNounNames: () => Object.keys(registeredNouns),
     })
   }
 

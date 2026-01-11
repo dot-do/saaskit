@@ -24,6 +24,7 @@ import type {
   AIFunction,
   RunnableAgent,
 } from '../types/context'
+import { createCachedProxy, findSimilarKey } from '../utils/proxy-factory'
 import type {
   IntegrationConfigOptions,
   StoredIntegration,

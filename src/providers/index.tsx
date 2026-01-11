@@ -2,11 +2,93 @@
  * saaskit providers
  *
  * React context providers for the SaaS framework.
+ * Integrates with @dotdo/react when available for real backend operations.
  */
 
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, type ReactNode, type ComponentType } from 'react'
 import type { ResolvedApp } from '../types/app'
 import type { AppContext } from '../types/context'
+
+// =============================================================================
+// @dotdo/react integration types (for optional dependency)
+// =============================================================================
+
+/**
+ * Workflow context from @dotdo/react
+ * Provides durable operations, scheduling, and Cap'n Web RPC access
+ */
+export interface WorkflowContext {
+  /** Fire-and-forget event */
+  send: <T>(event: T) => void
+  /** Single attempt operation */
+  try: <T>(action: () => Promise<T>) => Promise<T>
+  /** Durable operation with retries */
+  do: <T>(action: () => Promise<T>) => Promise<T>
+  /** Schedule an action for later */
+  in: (delay: string | number) => WorkflowContext
+  /** Access to underlying client for direct RPC */
+  client: unknown
+  /** Dynamic property access for Noun.verb pattern */
+  [key: string]: unknown
+}
+
+/**
+ * DataProvider from @dotdo/react/admin
+ */
+export interface DataProvider {
+  getList: (params: unknown) => Promise<unknown>
+  getOne: (params: unknown) => Promise<unknown>
+  getMany: (params: unknown) => Promise<unknown>
+  create: (params: unknown) => Promise<unknown>
+  update: (params: unknown) => Promise<unknown>
+  delete: (params: unknown) => Promise<unknown>
+  deleteMany: (params: unknown) => Promise<unknown>
+  subscribe?: (resource: string, callback: (event: unknown) => void) => () => void
+}
+
+/**
+ * Configuration for DotdoDataProvider
+ */
+export interface DotdoDataProviderConfig {
+  /** Namespace URL for the Durable Object */
+  ns: string
+  /** Custom headers for requests */
+  headers?: Record<string, string>
+  /** Request timeout in milliseconds */
+  timeout?: number
+  /** Enable real-time subscriptions */
+  realtime?: boolean
+}
+
+// Type definitions for @dotdo/react components
+type DOProviderComponent = ComponentType<{ ns: string; config?: unknown; children: ReactNode }>
+type AdminProviderComponent = ComponentType<{ dataProvider: DataProvider; children: ReactNode }>
+type DotdoDataProviderFactory = (config: DotdoDataProviderConfig) => DataProvider
+type Use$Hook = () => WorkflowContext
+
+// Dynamic imports for optional @dotdo/react dependency
+let DOProvider: DOProviderComponent | null = null
+let DotdoAdminProvider: AdminProviderComponent | null = null
+let DotdoDataProviderFn: DotdoDataProviderFactory | null = null
+let use$Hook: Use$Hook | null = null
+let dotdoAvailable = false
+
+// Try to import @dotdo/react at module load time
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const dotdoReact = require('@dotdo/react')
+  DOProvider = dotdoReact.DO
+  use$Hook = dotdoReact.use$
+
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const dotdoReactAdmin = require('@dotdo/react/admin')
+  DotdoAdminProvider = dotdoReactAdmin.AdminProvider
+  DotdoDataProviderFn = dotdoReactAdmin.DotdoDataProvider
+
+  dotdoAvailable = true
+} catch {
+  // @dotdo/react is not installed, will use stub context
+}
 
 // =============================================================================
 // App Provider - Provides the app configuration to all children
@@ -169,6 +251,17 @@ export interface SaaSProviderProps {
   realtime?: RealtimeConfig
   /** Initial organization ID for multi-tenant */
   organizationId?: string
+  /**
+   * Pre-configured DataProvider instance.
+   * Use this for custom data provider configurations.
+   * Takes precedence over `app.config.do` if provided.
+   */
+  dataProvider?: DataProvider
+  /**
+   * Additional configuration for DotdoDataProvider.
+   * Only used when `app.config.do` is provided and no `dataProvider` is passed.
+   */
+  dotdoConfig?: Omit<DotdoDataProviderConfig, 'ns'>
   /** Children to render */
   children: ReactNode
 }
