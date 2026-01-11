@@ -74,8 +74,24 @@ export interface DbProxyConfig<TAccessor> {
 export function createDbProxy<TAccessor>(
   config: DbProxyConfig<TAccessor>
 ): Record<string, TAccessor | undefined> {
-  const { isRegistered, createAccessor, getNounNames, unregisteredError } = config
+  const {
+    isInitialized,
+    notInitializedError,
+    isRegistered,
+    createAccessor,
+    getNounNames,
+    unregisteredError,
+  } = config
   const accessorCache = new Map<string, TAccessor>()
+
+  /**
+   * Check if initialization is required and throw if not initialized
+   */
+  function checkInitialized(): void {
+    if (isInitialized && !isInitialized()) {
+      throw new Error(notInitializedError || 'Database not initialized')
+    }
+  }
 
   return new Proxy({} as Record<string, TAccessor | undefined>, {
     get(_target, prop: string | symbol) {
@@ -84,7 +100,10 @@ export function createDbProxy<TAccessor>(
         return undefined
       }
 
-      // Return undefined if noun is not registered
+      // Check if nouns have been initialized
+      checkInitialized()
+
+      // Return undefined or throw if noun is not registered
       if (!isRegistered(prop)) {
         if (unregisteredError) {
           throw new Error(unregisteredError(prop))
@@ -105,10 +124,18 @@ export function createDbProxy<TAccessor>(
       if (typeof prop !== 'string') {
         return false
       }
+      // Don't throw on `in` checks, just return false if not initialized
+      if (isInitialized && !isInitialized()) {
+        return false
+      }
       return isRegistered(prop)
     },
 
     ownKeys() {
+      // Don't throw on enumeration, return empty if not initialized
+      if (isInitialized && !isInitialized()) {
+        return []
+      }
       if (getNounNames) {
         return getNounNames()
       }
@@ -117,6 +144,11 @@ export function createDbProxy<TAccessor>(
 
     getOwnPropertyDescriptor(_target, prop: string | symbol) {
       if (typeof prop !== 'string') {
+        return undefined
+      }
+
+      // Don't throw on property descriptor checks
+      if (isInitialized && !isInitialized()) {
         return undefined
       }
 

@@ -355,6 +355,10 @@ function createStubAppContext(): AppContext {
  * - Realtime subscriptions
  * - Backend operations ($)
  *
+ * When `app.config.do` is set and @dotdo/react is installed, automatically
+ * connects to the dotdo backend for real operations. Otherwise, uses a
+ * stub context for development.
+ *
  * @example
  * ```tsx
  * import { defineApp, SaaSProvider, SaaS } from 'saaskit'
@@ -381,40 +385,94 @@ function createStubAppContext(): AppContext {
  *   )
  * }
  * ```
+ *
+ * @example
+ * ```tsx
+ * // With custom data provider configuration
+ * import { DotdoDataProvider } from '@dotdo/react/admin'
+ *
+ * const dataProvider = DotdoDataProvider({
+ *   ns: 'https://api.myapp.do',
+ *   headers: { Authorization: 'Bearer token' },
+ *   timeout: 60000,
+ * })
+ *
+ * function Root() {
+ *   return (
+ *     <SaaSProvider app={app} dataProvider={dataProvider}>
+ *       <SaaS app={app} />
+ *     </SaaSProvider>
+ *   )
+ * }
+ * ```
  */
 export function SaaSProvider({
   app,
-  auth,
-  realtime,
+  auth: _auth,
+  realtime: _realtime,
   organizationId,
+  dataProvider: providedDataProvider,
+  dotdoConfig,
   children,
 }: SaaSProviderProps): ReactNode {
   // TODO: Implement authentication state management
   // TODO: Implement organization context
   // TODO: Implement realtime WebSocket connection
-  // TODO: Connect to dotdo backend
 
-  // Create stub context for now
-  const $ = createStubAppContext()
+  const endpoint = app.config.do
 
-  const value: SaaSContextValue = {
-    app,
-    $,
-    organization: organizationId
-      ? { id: organizationId, name: 'Organization', slug: 'org' }
-      : undefined,
-    user: undefined,
-    isAuthenticated: false,
-    isLoading: false,
-  }
+  // Create data provider if endpoint is provided and @dotdo/react is available
+  const dataProvider = useMemo(() => {
+    if (providedDataProvider) {
+      return providedDataProvider
+    }
+    if (endpoint && dotdoAvailable && DotdoDataProviderFn) {
+      return DotdoDataProviderFn({
+        ns: endpoint,
+        ...dotdoConfig,
+      })
+    }
+    return null
+  }, [endpoint, providedDataProvider, dotdoConfig])
 
-  return (
+  // Create stub context for fallback
+  const stubContext = useMemo(() => createStubAppContext(), [])
+
+  const value: SaaSContextValue = useMemo(
+    () => ({
+      app,
+      $: stubContext, // Will be overridden by DotdoContextBridge when @dotdo/react is available
+      organization: organizationId
+        ? { id: organizationId, name: 'Organization', slug: 'org' }
+        : undefined,
+      user: undefined,
+      isAuthenticated: false,
+      isLoading: false,
+    }),
+    [app, stubContext, organizationId]
+  )
+
+  // Build the provider tree
+  // Wrap with @dotdo/react providers when available and configured
+  let content = (
     <SaaSContext.Provider value={value}>
-      <AppContext.Provider value={{ app, endpoint: app.config.do, namespace: app.config.ns }}>
+      <AppContext.Provider value={{ app, endpoint, namespace: app.config.ns }}>
         {children}
       </AppContext.Provider>
     </SaaSContext.Provider>
   )
+
+  // If @dotdo/react is available and we have a data provider, wrap with admin provider
+  if (dotdoAvailable && DotdoAdminProvider && dataProvider) {
+    content = <DotdoAdminProvider dataProvider={dataProvider}>{content}</DotdoAdminProvider>
+  }
+
+  // If @dotdo/react is available and we have an endpoint, wrap with DO provider
+  if (dotdoAvailable && DOProvider && endpoint) {
+    content = <DOProvider ns={endpoint}>{content}</DOProvider>
+  }
+
+  return content
 }
 
 /**

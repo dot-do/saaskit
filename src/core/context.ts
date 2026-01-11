@@ -88,122 +88,41 @@ function createNounAccessor(noun: string): NounAccessor {
 }
 
 /**
- * Find the closest matching noun name for helpful error suggestions
- */
-function findSimilarNoun(name: string, nouns: string[]): string | null {
-  const nameLower = name.toLowerCase()
-
-  for (const noun of nouns) {
-    const nounLower = noun.toLowerCase()
-
-    // Exact case-insensitive match
-    if (nameLower === nounLower) {
-      return noun
-    }
-
-    // Check for common typos: missing letter, extra letter, or swapped letters
-    if (Math.abs(name.length - noun.length) <= 1) {
-      let diff = 0
-      const longer = name.length >= noun.length ? nameLower : nounLower
-      const shorter = name.length < noun.length ? nameLower : nounLower
-
-      for (let i = 0; i < longer.length; i++) {
-        if (shorter[i] !== longer[i]) diff++
-        if (diff > 2) break
-      }
-
-      if (diff <= 2) return noun
-    }
-
-    // Check for plural/singular confusion
-    if (nameLower === nounLower + 's' || nameLower + 's' === nounLower) {
-      return noun
-    }
-  }
-
-  return null
-}
-
-/**
  * Create database proxy that provides noun-specific accessors
  *
- * Features:
- * - Caches accessor instances for memory efficiency
- * - Provides helpful error messages with suggestions for typos
- * - Supports typed access when using noun definitions
+ * Uses the shared createCachedProxy utility with custom error handling
+ * for helpful typo suggestions and hints.
  */
 function createDbProxy(nouns: string[]): Record<string, NounAccessor> {
   const nounSet = new Set(nouns)
-  // Cache for noun accessors - created on first access
-  const accessorCache = new Map<string, NounAccessor>()
 
-  return new Proxy({} as Record<string, NounAccessor>, {
-    get(target, prop: string) {
-      if (typeof prop !== 'string') return undefined
+  return createCachedProxy<NounAccessor>({
+    validKeys: nounSet,
+    createValue: createNounAccessor,
+    onInvalidKey: (prop: string, validKeys: Set<string>) => {
+      // Provide helpful error message with suggestions
+      const similar = findSimilarKey(prop, validKeys)
+      const nounArray = Array.from(validKeys)
 
-      // Check cache first for memory efficiency
-      const cached = accessorCache.get(prop)
-      if (cached) return cached
-
-      // Validate noun exists
-      if (!nounSet.has(prop)) {
-        // Provide helpful error message with suggestions
-        const similar = findSimilarNoun(prop, nouns)
-
-        if (similar) {
-          throw new Error(
-            `Unknown noun: "${prop}". Did you mean "${similar}"?\n` +
-              `Available nouns: ${nouns.join(', ')}`
-          )
-        }
-
-        if (nouns.length === 0) {
-          throw new Error(
-            `Unknown noun: "${prop}". No nouns have been defined.\n` +
-              `Hint: Pass nouns when creating context: createContext({ nouns: ['${prop}', ...] })`
-          )
-        }
-
+      if (similar) {
         throw new Error(
-          `Unknown noun: "${prop}".\n` +
-            `Available nouns: ${nouns.join(', ')}\n` +
-            `Hint: Make sure "${prop}" is included in the nouns array.`
+          `Unknown noun: "${prop}". Did you mean "${similar}"?\n` +
+            `Available nouns: ${nounArray.join(', ')}`
         )
       }
 
-      // Create and cache the accessor
-      const accessor = createNounAccessor(prop)
-      accessorCache.set(prop, accessor)
-      return accessor
-    },
-
-    // Support for 'in' operator: 'Customer' in $.db
-    has(target, prop: string) {
-      if (typeof prop !== 'string') return false
-      return nounSet.has(prop)
-    },
-
-    // Support for Object.keys($.db)
-    ownKeys() {
-      return Array.from(nounSet)
-    },
-
-    // Required for ownKeys to work properly
-    getOwnPropertyDescriptor(target, prop: string) {
-      if (typeof prop !== 'string' || !nounSet.has(prop)) return undefined
-
-      // Get or create accessor
-      let accessor = accessorCache.get(prop)
-      if (!accessor) {
-        accessor = createNounAccessor(prop)
-        accessorCache.set(prop, accessor)
+      if (nounArray.length === 0) {
+        throw new Error(
+          `Unknown noun: "${prop}". No nouns have been defined.\n` +
+            `Hint: Pass nouns when creating context: createContext({ nouns: ['${prop}', ...] })`
+        )
       }
 
-      return {
-        enumerable: true,
-        configurable: true,
-        value: accessor,
-      }
+      throw new Error(
+        `Unknown noun: "${prop}".\n` +
+          `Available nouns: ${nounArray.join(', ')}\n` +
+          `Hint: Make sure "${prop}" is included in the nouns array.`
+      )
     },
   })
 }

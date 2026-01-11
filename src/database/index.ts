@@ -45,6 +45,7 @@ export * from './types'
 export * from './batcher'
 export * from './cache'
 export * from './indexes'
+export * from './proxy'
 
 import type {
   NounDefinitions,
@@ -56,6 +57,7 @@ import type {
   SearchResult,
   SaaSContext,
 } from './types'
+import { createDbProxy } from './proxy'
 
 /**
  * Valid relationship operator patterns for noun field definitions.

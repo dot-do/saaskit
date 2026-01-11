@@ -193,6 +193,10 @@ export type {
   AppConfig,
   ResolvedApp,
   App,
+  // Integrations (used by ExtendedContext)
+  IntegrationConfigOptions,
+  StoredIntegration,
+  FetchFunction,
 } from './types'
 
 // Utilities
