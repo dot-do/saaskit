@@ -180,12 +180,12 @@ describe('Events & Schedules', () => {
         })
       })
 
-      const match = { id: 'm-1', candidate: { email: 'john@example.com' } }
+      const match = { id: 'm-1', candidate: { email: 'john@example.com.ai' } }
       const handlers = registeredHandlers.get('Match.hired')!
       await handlers[0](match, mockContext)
 
       expect((mockContext as any).api.emails.send).toHaveBeenCalledWith({
-        to: 'john@example.com',
+        to: 'john@example.com.ai',
         subject: 'Offer Letter',
       })
     })

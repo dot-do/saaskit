@@ -1369,13 +1369,13 @@ describe('API Generator', () => {
       const spec = generateOpenAPISpec({
         nouns: { Item: { name: 'string' } },
         servers: [
-          { url: 'https://api.example.com', description: 'Production' },
-          { url: 'https://staging.example.com', description: 'Staging' },
+          { url: 'https://api.example.com.ai', description: 'Production' },
+          { url: 'https://staging.example.com.ai', description: 'Staging' },
         ],
       })
 
       expect(spec.servers).toHaveLength(2)
-      expect(spec.servers![0].url).toBe('https://api.example.com')
+      expect(spec.servers![0].url).toBe('https://api.example.com.ai')
     })
   })
 
@@ -1469,7 +1469,7 @@ describe('API Generator', () => {
     it('should include CORS headers when configured', async () => {
       const api = createTestAPI({
         cors: {
-          origin: 'https://example.com',
+          origin: 'https://example.com.ai',
           methods: ['GET', 'POST', 'PUT', 'DELETE'],
         },
       })
@@ -1481,7 +1481,7 @@ describe('API Generator', () => {
         body: null,
       })
 
-      expect(response.headers['Access-Control-Allow-Origin']).toBe('https://example.com')
+      expect(response.headers['Access-Control-Allow-Origin']).toBe('https://example.com.ai')
       expect(response.headers['Access-Control-Allow-Methods']).toBe('GET, POST, PUT, DELETE')
     })
 

@@ -165,27 +165,27 @@ describe('Built-in SaaS Nouns', () => {
     describe('User CRUD Operations', () => {
       it('should create a user with required fields', async () => {
         const user = await $.db.User.create({
-          email: 'john@example.com',
+          email: 'john@example.com.ai',
           name: 'John Doe',
           role: 'member',
         })
 
         expect(user).toHaveProperty('id')
-        expect(user.email).toBe('john@example.com')
+        expect(user.email).toBe('john@example.com.ai')
         expect(user.name).toBe('John Doe')
         expect(user.role).toBe('member')
       })
 
       it('should enforce unique email constraint', async () => {
         await $.db.User.create({
-          email: 'unique@example.com',
+          email: 'unique@example.com.ai',
           name: 'First User',
           role: 'member',
         })
 
         await expect(
           $.db.User.create({
-            email: 'unique@example.com',
+            email: 'unique@example.com.ai',
             name: 'Second User',
             role: 'member',
           })
@@ -205,7 +205,7 @@ describe('Built-in SaaS Nouns', () => {
       it('should validate role enum values', async () => {
         await expect(
           $.db.User.create({
-            email: 'test@example.com',
+            email: 'test@example.com.ai',
             name: 'Test',
             role: 'superadmin', // Invalid role
           })
@@ -685,14 +685,14 @@ describe('Built-in SaaS Nouns', () => {
         })
 
         const webhook = await $.db.Webhook.create({
-          url: 'https://example.com/webhook',
+          url: 'https://example.com.ai/webhook',
           events: ['order.created', 'order.paid'],
           organization: org.id,
           isActive: true,
         })
 
         expect(webhook).toHaveProperty('id')
-        expect(webhook.url).toBe('https://example.com/webhook')
+        expect(webhook.url).toBe('https://example.com.ai/webhook')
         expect(webhook.secret).toBeDefined()
         // Secret should be sufficiently long for HMAC signing
         expect((webhook.secret as string).length).toBeGreaterThan(20)
@@ -723,7 +723,7 @@ describe('Built-in SaaS Nouns', () => {
         // In production, HTTP should be rejected
         await expect(
           $.db.Webhook.create({
-            url: 'http://example.com/webhook',
+            url: 'http://example.com.ai/webhook',
             events: ['test.event'],
             organization: org.id,
             isActive: true,
@@ -1031,7 +1031,7 @@ describe('Built-in SaaS Nouns', () => {
         })
 
         const user = await $.db.User.create({
-          email: 'user@example.com',
+          email: 'user@example.com.ai',
           name: 'Test User',
           role: 'member',
           organization: org.id,
@@ -1047,7 +1047,7 @@ describe('Built-in SaaS Nouns', () => {
         })
 
         const user = await $.db.User.create({
-          email: 'populate@example.com',
+          email: 'populate@example.com.ai',
           name: 'Populate User',
           role: 'member',
           organization: org.id,
@@ -1069,14 +1069,14 @@ describe('Built-in SaaS Nouns', () => {
         })
 
         await $.db.User.create({
-          email: 'user1@example.com',
+          email: 'user1@example.com.ai',
           name: 'User One',
           role: 'admin',
           organization: org.id,
         })
 
         await $.db.User.create({
-          email: 'user2@example.com',
+          email: 'user2@example.com.ai',
           name: 'User Two',
           role: 'member',
           organization: org.id,
@@ -1085,7 +1085,7 @@ describe('Built-in SaaS Nouns', () => {
         const loadedOrg = await $.db.Organization.get(org.id, { include: ['members'] })
 
         expect(loadedOrg?.members).toHaveLength(2)
-        expect((loadedOrg?.members as Array<{ email: string }>).map((u) => u.email)).toContain('user1@example.com')
+        expect((loadedOrg?.members as Array<{ email: string }>).map((u) => u.email)).toContain('user1@example.com.ai')
       })
     })
 
@@ -1236,9 +1236,9 @@ describe('Built-in SaaS Nouns', () => {
         eventLog.push(`invited:${(user as { email: string }).email}`)
       })
 
-      await $.verbs.User.invite({ email: 'newuser@example.com' })
+      await $.verbs.User.invite({ email: 'newuser@example.com.ai' })
 
-      expect(eventLog).toContain('invited:newuser@example.com')
+      expect(eventLog).toContain('invited:newuser@example.com.ai')
     })
 
     it('should emit Organization.upgraded event on plan change', async () => {

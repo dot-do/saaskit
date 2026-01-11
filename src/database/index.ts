@@ -34,7 +34,7 @@
  * // Use typed database accessors
  * const customer = await $.db.Customer.create({
  *   name: 'John',
- *   email: 'john@example.com'
+ *   email: 'john@example.com.ai'
  * })
  * ```
  *
@@ -204,7 +204,7 @@ function createDatabaseAccessor<T extends BaseRecord>(
  * // Create
  * const customer = await $.db.Customer.create({
  *   name: 'John',
- *   email: 'john@example.com'
+ *   email: 'john@example.com.ai'
  * })
  *
  * // Read
@@ -255,7 +255,7 @@ function createDatabaseAccessor<T extends BaseRecord>(
  * // Then use via $.db:
  * const customer = await $.db.Customer.create({
  *   name: 'John',
- *   email: 'john@example.com'
+ *   email: 'john@example.com.ai'
  * })
  * ```
  */

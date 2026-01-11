@@ -102,7 +102,7 @@ export function generateAuthentication(options: ZapierGeneratorOptions): ZapierA
  * @example
  * ```ts
  * const app = defineApp({
- *   do: 'https://api.example.com',
+ *   do: 'https://api.example.com.ai',
  *   nouns: ['User', 'Order', 'Product'],
  *   verbs: {
  *     User: ['create', 'update', 'invite'],
@@ -115,7 +115,7 @@ export function generateAuthentication(options: ZapierGeneratorOptions): ZapierA
  * })
  *
  * const zapierApp = generateZapierApp(app, {
- *   apiBaseUrl: 'https://api.example.com',
+ *   apiBaseUrl: 'https://api.example.com.ai',
  *   appName: 'My App',
  * })
  * ```

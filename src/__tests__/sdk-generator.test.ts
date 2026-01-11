@@ -53,7 +53,7 @@ describe('SDK Generator', () => {
       },
       packageName: config.packageName ?? 'test-sdk',
       version: config.version ?? '1.0.0',
-      baseUrl: config.baseUrl ?? 'https://api.example.com',
+      baseUrl: config.baseUrl ?? 'https://api.example.com.ai',
     })
   }
 
@@ -1286,7 +1286,7 @@ describe('SDK Generator', () => {
         const results = await generator.publishAll({
           dryRun: true,
           continueOnError: true,
-          npm: { registry: 'https://invalid-registry.example.com' }, // Will fail
+          npm: { registry: 'https://invalid-registry.example.com.ai' }, // Will fail
           pypi: { repository: 'https://upload.pypi.org/legacy/' },
           go: { module: 'github.com/mycompany/sdk' },
         })

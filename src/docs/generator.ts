@@ -261,7 +261,7 @@ function parseField(fieldDef: string | [string]): SchemaField {
  * @example
  * ```typescript
  * generateExampleValue('email', { type: 'string', required: true })
- * // Returns: 'user@example.com'
+ * // Returns: 'user@example.com.ai'
  *
  * generateExampleValue('price', { type: 'number', required: true })
  * // Returns: 99.99
@@ -271,11 +271,11 @@ function generateExampleValue(fieldName: string, field: SchemaField): unknown {
   switch (field.type) {
     case 'string':
       // Use intelligent defaults based on field name
-      if (fieldName === 'email') return 'user@example.com'
+      if (fieldName === 'email') return 'user@example.com.ai'
       if (fieldName === 'name') return 'John Doe'
       if (fieldName === 'title') return 'Example Title'
       if (fieldName === 'description') return 'A detailed description'
-      if (fieldName === 'url') return 'https://example.com'
+      if (fieldName === 'url') return 'https://example.com.ai'
       if (fieldName === 'phone') return '+1-555-0123'
       return `example_${fieldName}`
 
@@ -383,8 +383,8 @@ function generateResponseExample(
  *
  * @example
  * ```typescript
- * const curl = generateCurlExample(endpoint, 'https://api.example.com')
- * // curl -X POST "https://api.example.com/users" \
+ * const curl = generateCurlExample(endpoint, 'https://api.example.com.ai')
+ * // curl -X POST "https://api.example.com.ai/users" \
  * //   -H "Authorization: Bearer YOUR_API_KEY" \
  * //   -H "Content-Type: application/json" \
  * //   -d '{"name": "John"}'
@@ -392,7 +392,7 @@ function generateResponseExample(
  */
 function generateCurlExample(
   endpoint: APIEndpoint,
-  baseUrl = 'https://api.example.com'
+  baseUrl = 'https://api.example.com.ai'
 ): string {
   const url = `${baseUrl}${endpoint.path.replace(':id', 'item_abc123')}`
 
@@ -713,7 +713,7 @@ Keep your API key secure. Never expose it in client-side code or public reposito
 Include your API key in the Authorization header:
 
 \`\`\`bash
-curl -H "Authorization: Bearer YOUR_API_KEY" https://api.example.com/${firstNounPlural}
+curl -H "Authorization: Bearer YOUR_API_KEY" https://api.example.com.ai/${firstNounPlural}
 \`\`\`
 
 Or when using the SDK:
@@ -747,14 +747,14 @@ Let's make your first API call to ${appName}.
 ## Using curl
 
 \`\`\`bash
-curl -X GET "https://api.example.com/${firstNounPlural}" \\
+curl -X GET "https://api.example.com.ai/${firstNounPlural}" \\
   -H "Authorization: Bearer YOUR_API_KEY"
 \`\`\`
 
 ## Using fetch
 
 \`\`\`javascript
-const response = await fetch('https://api.example.com/${firstNounPlural}', {
+const response = await fetch('https://api.example.com.ai/${firstNounPlural}', {
   headers: {
     'Authorization': 'Bearer YOUR_API_KEY',
   },

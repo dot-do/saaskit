@@ -412,7 +412,7 @@ const client = new YourApp({ apiKey: '...' })
 // Typed CRUD
 const customer = await client.customers.create({
   name: 'John Smith',
-  email: 'john@example.com',
+  email: 'john@example.com.ai',
 })
 
 // Typed verbs

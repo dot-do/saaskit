@@ -94,7 +94,7 @@ export function getDefaultSearchFields(nounName: string): ZapierField[] {
  * ```ts
  * const search = generateSearch({
  *   nounName: 'User',
- *   apiBaseUrl: 'https://api.example.com',
+ *   apiBaseUrl: 'https://api.example.com.ai',
  *   schemaFields: [
  *     { name: 'email', type: 'string', searchable: true },
  *     { name: 'name', type: 'string', searchable: true },
@@ -237,7 +237,7 @@ export function generateFindOrCreate(options: GenerateSearchOptions): ZapierSear
  * @example
  * ```ts
  * const searches = generateSearchesForNoun('User', {
- *   apiBaseUrl: 'https://api.example.com',
+ *   apiBaseUrl: 'https://api.example.com.ai',
  *   includeFindOrCreate: true,
  * })
  * // Returns [FindUser, FindOrCreateUser] searches
@@ -287,7 +287,7 @@ export function generateSearchesForNoun(
  * ```ts
  * const searches = generateSearchesFromNouns(
  *   ['User', 'Order', 'Product'],
- *   { apiBaseUrl: 'https://api.example.com' }
+ *   { apiBaseUrl: 'https://api.example.com.ai' }
  * )
  * // Returns searches for each noun
  * ```

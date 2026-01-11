@@ -170,7 +170,7 @@ describe('CLI Generator', () => {
         version: '1.0.0',
         auth: {
           type: 'oauth',
-          authUrl: 'https://auth.example.com/authorize',
+          authUrl: 'https://auth.example.com.ai/authorize',
         },
       })
       const cli = generator.generate()
@@ -688,7 +688,7 @@ describe('CLI Generator', () => {
         const runner = createTestRunner()
         const mockValidate = vi.fn().mockResolvedValue({
           valid: true,
-          user: { email: 'user@example.com', organization: 'Acme' },
+          user: { email: 'user@example.com.ai', organization: 'Acme' },
         })
 
         const result = await runner.execute(['login', '--api-key', 'sk_valid'], {
@@ -697,7 +697,7 @@ describe('CLI Generator', () => {
         })
 
         expect(result.success).toBe(true)
-        expect(result.output).toMatch(/user@example.com/)
+        expect(result.output).toMatch(/user@example.com.ai/)
       })
     })
 
@@ -706,8 +706,8 @@ describe('CLI Generator', () => {
         const runner = createTestRunner()
         const mockFetch = vi.fn().mockResolvedValue({
           data: [
-            { id: 'cust_1', name: 'John', email: 'john@example.com' },
-            { id: 'cust_2', name: 'Jane', email: 'jane@example.com' },
+            { id: 'cust_1', name: 'John', email: 'john@example.com.ai' },
+            { id: 'cust_2', name: 'Jane', email: 'jane@example.com.ai' },
           ],
         })
 
@@ -785,11 +785,11 @@ describe('CLI Generator', () => {
         const mockFetch = vi.fn().mockResolvedValue({
           id: 'cust_new',
           name: 'New Customer',
-          email: 'new@example.com',
+          email: 'new@example.com.ai',
         })
 
         const result = await runner.execute(
-          ['customer', 'create', '--name', 'New Customer', '--email', 'new@example.com'],
+          ['customer', 'create', '--name', 'New Customer', '--email', 'new@example.com.ai'],
           { fetch: mockFetch }
         )
 
@@ -800,7 +800,7 @@ describe('CLI Generator', () => {
             path: '/customers',
             body: expect.objectContaining({
               name: 'New Customer',
-              email: 'new@example.com',
+              email: 'new@example.com.ai',
             }),
           })
         )
@@ -811,7 +811,7 @@ describe('CLI Generator', () => {
         const mockFetch = vi.fn().mockResolvedValue({ id: 'cust_new' })
 
         await runner.execute(
-          ['customer', 'create', '--data', '{"name":"JSON","email":"json@example.com"}'],
+          ['customer', 'create', '--data', '{"name":"JSON","email":"json@example.com.ai"}'],
           { fetch: mockFetch }
         )
 
@@ -819,7 +819,7 @@ describe('CLI Generator', () => {
           expect.objectContaining({
             body: expect.objectContaining({
               name: 'JSON',
-              email: 'json@example.com',
+              email: 'json@example.com.ai',
             }),
           })
         )
@@ -843,7 +843,7 @@ describe('CLI Generator', () => {
         const mockFetch = vi.fn().mockResolvedValue({
           id: 'cust_123',
           name: 'John Doe',
-          email: 'john@example.com',
+          email: 'john@example.com.ai',
         })
 
         const result = await runner.execute(['customer', 'get', 'cust_123'], {

@@ -546,7 +546,7 @@ describe('Human-in-the-Loop ($.human)', () => {
       const draft: EmailDraft = {
         subject: 'Welcome!',
         body: 'Welcome to our service...',
-        recipients: ['alice@example.com'],
+        recipients: ['alice@example.com.ai'],
       }
 
       const reviewed = await $.human.review<EmailDraft>(draft, {

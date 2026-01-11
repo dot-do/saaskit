@@ -70,8 +70,13 @@ import {
   getCompletionScript,
 } from './completions'
 
+import { createCLIRunner } from './runner'
+
 // Re-export types
 export type * from './types'
+
+// Re-export runner
+export { createCLIRunner }
 
 // ============================================================================
 // Utilities

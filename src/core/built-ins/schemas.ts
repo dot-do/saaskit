@@ -43,7 +43,7 @@ import type { BuiltInNounConfig } from './types'
  * @example
  * ```ts
  * const user = await $.db.User.create({
- *   email: 'jane@example.com',
+ *   email: 'jane@example.com.ai',
  *   name: 'Jane Doe',
  *   role: 'admin',
  *   organization: orgId,
@@ -313,7 +313,7 @@ export const APIKeyConfig: BuiltInNounConfig = {
  * @example
  * ```ts
  * const webhook = await $.db.Webhook.create({
- *   url: 'https://example.com/webhook',
+ *   url: 'https://example.com.ai/webhook',
  *   events: ['order.created', 'order.paid'],
  *   organization: orgId,
  *   isActive: true,

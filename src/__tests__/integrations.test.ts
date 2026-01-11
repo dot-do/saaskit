@@ -189,7 +189,7 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       const result = await emails($.api.emails).send({
-        to: 'user@example.com',
+        to: 'user@example.com.ai',
         subject: 'Hello',
         body: 'Test email body',
       })
@@ -201,7 +201,7 @@ describe('Integrations Layer', () => {
           Authorization: expect.stringContaining('Bearer'),
         },
         body: JSON.stringify({
-          to: 'user@example.com',
+          to: 'user@example.com.ai',
           subject: 'Hello',
           body: 'Test email body',
         }),
@@ -218,7 +218,7 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       await emails($.api.emails).send({
-        to: ['user1@example.com', 'user2@example.com'],
+        to: ['user1@example.com.ai', 'user2@example.com.ai'],
         subject: 'Hello',
         body: 'Test email body',
       })
@@ -226,7 +226,7 @@ describe('Integrations Layer', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         'https://emails.do/api/send',
         expect.objectContaining({
-          body: expect.stringContaining('["user1@example.com","user2@example.com"]'),
+          body: expect.stringContaining('["user1@example.com.ai","user2@example.com.ai"]'),
         })
       )
     })
@@ -240,7 +240,7 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       await emails($.api.emails).send({
-        to: 'user@example.com',
+        to: 'user@example.com.ai',
         template: 'welcome',
         data: { name: 'John' },
       })
@@ -439,7 +439,7 @@ describe('Integrations Layer', () => {
       const $ = createContext()
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ id: 'cus_123', email: 'test@example.com' }),
+        json: () => Promise.resolve({ id: 'cus_123', email: 'test@example.com.ai' }),
       })
       $.setFetch(mockFetch)
 
@@ -459,7 +459,7 @@ describe('Integrations Layer', () => {
     it('requires registration before use', () => {
       const $ = createContext()
 
-      expect(() => apollo($.api.apollo).people.enrich({ email: 'test@example.com' })).toThrow(
+      expect(() => apollo($.api.apollo).people.enrich({ email: 'test@example.com.ai' })).toThrow(
         'Integration "apollo" is not registered'
       )
     })
@@ -478,7 +478,7 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       const result = await apollo($.api.apollo).people.enrich({
-        email: 'john@example.com',
+        email: 'john@example.com.ai',
       })
 
       expect(mockFetch).toHaveBeenCalledWith('https://apis.do/apollo/people/enrich', {
@@ -488,7 +488,7 @@ describe('Integrations Layer', () => {
           Authorization: expect.stringContaining('Bearer'),
           'X-Integration-Key': 'apollo-api-key',
         },
-        body: JSON.stringify({ email: 'john@example.com' }),
+        body: JSON.stringify({ email: 'john@example.com.ai' }),
       })
       expect((result as { person: { name: string } }).person.name).toBe('John Doe')
     })
@@ -506,7 +506,7 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       const result = await hubspot($.api.hubspot).contacts.create({
-        email: 'john@example.com',
+        email: 'john@example.com.ai',
         firstname: 'John',
         lastname: 'Doe',
       })
@@ -534,7 +534,7 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       await expect(
-        emails($.api.emails).send({ to: 'test@example.com', subject: 'Test', body: 'Test' })
+        emails($.api.emails).send({ to: 'test@example.com.ai', subject: 'Test', body: 'Test' })
       ).rejects.toThrow('Emails.do API error (401): Invalid API key')
     })
 
@@ -544,7 +544,7 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       await expect(
-        emails($.api.emails).send({ to: 'test@example.com', subject: 'Test', body: 'Test' })
+        emails($.api.emails).send({ to: 'test@example.com.ai', subject: 'Test', body: 'Test' })
       ).rejects.toThrow('Failed to connect to Emails.do: Network error')
     })
 
@@ -560,7 +560,7 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       await expect(
-        emails($.api.emails).send({ to: 'test@example.com', subject: 'Test', body: 'Test' })
+        emails($.api.emails).send({ to: 'test@example.com.ai', subject: 'Test', body: 'Test' })
       ).rejects.toThrow('Rate limit exceeded for Emails.do. Retry after 60 seconds.')
     })
 
@@ -575,7 +575,7 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       await expect(
-        emails($.api.emails).send({ to: 'test@example.com', subject: 'Test', body: 'Test' })
+        emails($.api.emails).send({ to: 'test@example.com.ai', subject: 'Test', body: 'Test' })
       ).rejects.toThrow('Request to Emails.do timed out')
     })
   })
@@ -590,7 +590,7 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       const result = await emails($.api.emails).send({
-        to: 'test@example.com',
+        to: 'test@example.com.ai',
         subject: 'Test',
         body: 'Test',
       })

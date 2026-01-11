@@ -79,7 +79,7 @@ export const loginCommand = new Command('login')
       }
 
       // Validate the API key
-      const response = await fetch(\`\${getConfig().baseUrl || '${config.baseUrl || 'https://api.example.com'}'}/auth/validate\`, {
+      const response = await fetch(\`\${getConfig().baseUrl || '${config.baseUrl || 'https://api.example.com.ai'}'}/auth/validate\`, {
         method: 'POST',
         headers: {
           'Authorization': \`Bearer \${apiKey}\`,

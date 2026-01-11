@@ -58,8 +58,8 @@ export function generateWebhookUrl(
  * const trigger = generateTrigger({
  *   nounName: 'Order',
  *   eventName: 'created',
- *   apiBaseUrl: 'https://api.example.com',
- *   webhookBaseUrl: 'https://hooks.example.com',
+ *   apiBaseUrl: 'https://api.example.com.ai',
+ *   webhookBaseUrl: 'https://hooks.example.com.ai',
  * })
  * // Returns a ZapierTrigger for "New Order" with webhook support
  * ```
@@ -172,7 +172,7 @@ export function generateTrigger(options: GenerateTriggerOptions): ZapierTrigger 
  * @example
  * ```ts
  * const triggers = generateTriggersForNoun('Order', {
- *   apiBaseUrl: 'https://api.example.com',
+ *   apiBaseUrl: 'https://api.example.com.ai',
  *   events: ['created', 'updated', 'fulfilled'],
  * })
  * // Returns triggers for Order.created, Order.updated, Order.fulfilled
@@ -218,7 +218,7 @@ export function generateTriggersForNoun(
  *     'Order.fulfilled': handler,
  *     'User.invited': handler,
  *   },
- *   { apiBaseUrl: 'https://api.example.com' }
+ *   { apiBaseUrl: 'https://api.example.com.ai' }
  * )
  * // Returns triggers for each event
  * ```

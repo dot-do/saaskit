@@ -55,7 +55,7 @@ export interface CLIConfigData {
  * Default configuration values
  */
 const DEFAULT_CONFIG: CLIConfigData = {
-  baseUrl: '${config.baseUrl || 'https://api.example.com'}',
+  baseUrl: '${config.baseUrl || 'https://api.example.com.ai'}',
   outputFormat: 'table',
   color: true,
   limit: 20,

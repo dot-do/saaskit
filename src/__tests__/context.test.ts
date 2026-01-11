@@ -347,7 +347,7 @@ describe('$ Context System', () => {
       const $ = createTestContext()
 
       const emails = $.api.emails as { send: (opts: { to: string; subject: string }) => Promise<unknown> }
-      const result = emails.send({ to: 'test@example.com', subject: 'Hello' })
+      const result = emails.send({ to: 'test@example.com.ai', subject: 'Hello' })
       expect(result).toBeInstanceOf(Promise)
     })
   })
@@ -355,14 +355,14 @@ describe('$ Context System', () => {
   describe('$.input - Verb Input Payload', () => {
     it('should be accessible as a property', () => {
       const $ = createTestContext({
-        input: { name: 'John', email: 'john@example.com' },
+        input: { name: 'John', email: 'john@example.com.ai' },
       })
 
       expect($.input).toBeDefined()
     })
 
     it('should contain the verb input data', () => {
-      const input = { name: 'John', email: 'john@example.com' }
+      const input = { name: 'John', email: 'john@example.com.ai' }
       const $ = createTestContext({ input })
 
       expect($.input).toEqual(input)
@@ -381,14 +381,14 @@ describe('$ Context System', () => {
 
   describe('$.record - Current Noun Instance', () => {
     it('should be accessible as a property', () => {
-      const record = { id: 'cus_123', name: 'John', email: 'john@example.com' }
+      const record = { id: 'cus_123', name: 'John', email: 'john@example.com.ai' }
       const $ = createTestContext({ record })
 
       expect($.record).toBeDefined()
     })
 
     it('should contain the current record data', () => {
-      const record = { id: 'cus_123', name: 'John', email: 'john@example.com' }
+      const record = { id: 'cus_123', name: 'John', email: 'john@example.com.ai' }
       const $ = createTestContext({ record })
 
       expect($.record).toEqual(record)
@@ -423,18 +423,18 @@ describe('$ Context System', () => {
 
   describe('$.user - Authenticated User', () => {
     it('should be accessible as a property', () => {
-      const user = { id: 'usr_123', email: 'admin@example.com', role: 'admin' }
+      const user = { id: 'usr_123', email: 'admin@example.com.ai', role: 'admin' }
       const $ = createTestContext({ user })
 
       expect($.user).toBeDefined()
     })
 
     it('should contain user information', () => {
-      const user = { id: 'usr_123', email: 'admin@example.com', role: 'admin' }
+      const user = { id: 'usr_123', email: 'admin@example.com.ai', role: 'admin' }
       const $ = createTestContext({ user })
 
       expect($.user!.id).toBe('usr_123')
-      expect($.user!.email).toBe('admin@example.com')
+      expect($.user!.email).toBe('admin@example.com.ai')
       expect($.user!.role).toBe('admin')
     })
 

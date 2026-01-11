@@ -9,7 +9,7 @@
  *
  * const app = defineApp({ ... })
  * const zapierApp = generateZapierApp(app, {
- *   apiBaseUrl: 'https://api.example.com',
+ *   apiBaseUrl: 'https://api.example.com.ai',
  *   appName: 'My App',
  * })
  *

@@ -346,7 +346,7 @@ export function useAuth(): AuthState & AuthActions {
       console.warn('[saaskit] useAuth.updateProfile called - not connected to backend')
       return {
         id: 'user_stub',
-        email: 'stub@example.com',
+        email: 'stub@example.com.ai',
         role: 'user',
         ...data,
       }

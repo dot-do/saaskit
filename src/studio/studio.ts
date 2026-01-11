@@ -230,7 +230,7 @@ function createCustomers(config: StudioConfig): CustomersInterface {
   const mockCustomers: Customer[] = [
     {
       id: 'cus_123',
-      email: 'john@example.com',
+      email: 'john@example.com.ai',
       name: 'John Smith',
       company: 'Acme Inc',
       planId: 'pro',
@@ -348,7 +348,7 @@ function createCustomers(config: StudioConfig): CustomersInterface {
         // Return a mock customer for any ID
         return {
           id: customerId,
-          email: 'user@example.com',
+          email: 'user@example.com.ai',
           name: 'Test User',
           planId: 'pro',
           status: 'active',
@@ -598,7 +598,7 @@ function createUsage(config: StudioConfig): UsageInterface {
 
     async getAtRiskCustomers(): Promise<AtRiskCustomer[]> {
       return [
-        { customerId: 'cus_risk1', email: 'quiet@example.com', usageScore: 15, riskLevel: 'high', daysSinceActive: 21 },
+        { customerId: 'cus_risk1', email: 'quiet@example.com.ai', usageScore: 15, riskLevel: 'high', daysSinceActive: 21 },
         { customerId: 'cus_risk2', email: 'dormant@test.io', usageScore: 28, riskLevel: 'medium', daysSinceActive: 14 },
         { customerId: 'cus_risk3', email: 'lowuse@demo.com', usageScore: 42, riskLevel: 'low', daysSinceActive: 7 },
       ]
@@ -694,7 +694,7 @@ function createSettings(config: StudioConfig): SettingsInterface {
         appName: config.appId,
         timezone: config.timezone ?? 'UTC',
         currency: config.currency ?? 'usd',
-        supportEmail: 'support@example.com',
+        supportEmail: 'support@example.com.ai',
       }
     },
 
@@ -1167,7 +1167,7 @@ function createInsights(config: StudioConfig): InsightsInterface {
       const mockHealthScores: CustomerHealthScore[] = [
         {
           customerId: 'cus_123',
-          email: 'john@example.com',
+          email: 'john@example.com.ai',
           overallScore: 85,
           category: 'healthy',
           components: {
@@ -1371,7 +1371,7 @@ function createNotifications(config: StudioConfig): NotificationsInterface {
 
   // Channel configurations (mock state)
   let emailConfig: EmailNotificationConfig | null = {
-    recipients: ['team@example.com'],
+    recipients: ['team@example.com.ai'],
     includeDetails: true,
     subjectPrefix: '[SaaS.Studio]',
   }

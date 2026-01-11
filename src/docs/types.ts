@@ -39,8 +39,8 @@ export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
  *   method: 'POST',
  *   path: '/users',
  *   description: 'Create a new user',
- *   requestExample: { name: 'John', email: 'john@example.com' },
- *   responseExample: { id: 'usr_123', name: 'John', email: 'john@example.com' },
+ *   requestExample: { name: 'John', email: 'john@example.com.ai' },
+ *   responseExample: { id: 'usr_123', name: 'John', email: 'john@example.com.ai' },
  * }
  * ```
  */

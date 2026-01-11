@@ -10,7 +10,7 @@
  *
  * // Generate a Zapier app from your SaaSkit config
  * const zapierApp = zapier.generateZapierApp(app, {
- *   apiBaseUrl: 'https://api.example.com',
+ *   apiBaseUrl: 'https://api.example.com.ai',
  * })
  *
  * // Export for Zapier CLI

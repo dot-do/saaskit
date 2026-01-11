@@ -1101,7 +1101,7 @@ describe('Stripe Integration', () => {
 
       const account = await $.billing.connect.createAccount({
         type: 'express',
-        email: 'partner@example.com',
+        email: 'partner@example.com.ai',
         country: 'US',
       })
 

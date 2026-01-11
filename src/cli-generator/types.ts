@@ -241,3 +241,61 @@ export interface ParsedNoun {
  * Output format for CLI commands
  */
 export type OutputFormat = 'table' | 'json' | 'yaml' | 'csv'
+
+// ============================================================================
+// CLI Runner Types (Runtime Execution)
+// ============================================================================
+
+/**
+ * Result of executing a CLI command
+ */
+export interface CommandResult {
+  /** Whether the command succeeded */
+  success: boolean
+  /** Output text (stdout) */
+  output: string
+  /** Error message if failed */
+  error?: string
+  /** Human-readable message */
+  message?: string
+  /** Usage hint for command */
+  usage?: string
+  /** Suggested similar command on typo */
+  suggestion?: string
+}
+
+/**
+ * Fetch request passed to custom fetch handler
+ */
+export interface FetchRequest {
+  /** HTTP method */
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  /** API path (e.g., /customers, /customers/123) */
+  path: string
+  /** Query parameters */
+  query?: Record<string, string>
+  /** Request body for POST/PUT */
+  body?: Record<string, unknown>
+}
+
+/**
+ * Options for CLI runner execute
+ */
+export interface ExecuteOptions {
+  /** Custom config directory for testing */
+  configDir?: string
+  /** Custom fetch handler for mocking API calls */
+  fetch?: (req: FetchRequest) => Promise<unknown>
+  /** Whether user is authenticated (for testing) */
+  authenticated?: boolean
+  /** Custom credentials validator */
+  validateCredentials?: (key: string) => Promise<{ valid: boolean; user?: { email: string; organization?: string } }>
+}
+
+/**
+ * CLI Runner instance for runtime execution
+ */
+export interface CLIRunner {
+  /** Execute a CLI command with arguments */
+  execute(args: string[], options?: ExecuteOptions): Promise<CommandResult>
+}

@@ -272,18 +272,18 @@ describe('Database Layer', () => {
       it('should create a record and return typed result', async () => {
         const customer = await $.db.Customer.create({
           name: 'John Doe',
-          email: 'john@example.com',
+          email: 'john@example.com.ai',
         })
 
         expect(customer).toHaveProperty('id')
         expect(customer.name).toBe('John Doe')
-        expect(customer.email).toBe('john@example.com')
+        expect(customer.email).toBe('john@example.com.ai')
       })
 
       it('should auto-generate id if not provided', async () => {
         const customer = await $.db.Customer.create({
           name: 'Jane Doe',
-          email: 'jane@example.com',
+          email: 'jane@example.com.ai',
         })
 
         expect(customer.id).toBeDefined()
@@ -294,7 +294,7 @@ describe('Database Layer', () => {
         const customer = await $.db.Customer.create({
           id: 'cust_123',
           name: 'Custom ID',
-          email: 'custom@example.com',
+          email: 'custom@example.com.ai',
         })
 
         expect(customer.id).toBe('cust_123')
@@ -304,14 +304,14 @@ describe('Database Layer', () => {
         await $.db.Customer.create({
           id: 'cust_dup',
           name: 'First',
-          email: 'first@example.com',
+          email: 'first@example.com.ai',
         })
 
         await expect(
           $.db.Customer.create({
             id: 'cust_dup',
             name: 'Second',
-            email: 'second@example.com',
+            email: 'second@example.com.ai',
           })
         ).rejects.toThrow(/duplicate|already exists/i)
       })
@@ -321,14 +321,14 @@ describe('Database Layer', () => {
       it('should retrieve a record by id', async () => {
         const created = await $.db.Customer.create({
           name: 'Get Test',
-          email: 'get@example.com',
+          email: 'get@example.com.ai',
         })
 
         const retrieved = await $.db.Customer.get(created.id)
 
         expect(retrieved).not.toBeNull()
         expect(retrieved?.name).toBe('Get Test')
-        expect(retrieved?.email).toBe('get@example.com')
+        expect(retrieved?.email).toBe('get@example.com.ai')
       })
 
       it('should return null for non-existent id', async () => {
@@ -342,7 +342,7 @@ describe('Database Layer', () => {
       it('should update a record by id', async () => {
         const created = await $.db.Customer.create({
           name: 'Update Test',
-          email: 'update@example.com',
+          email: 'update@example.com.ai',
         })
 
         const updated = await $.db.Customer.update(created.id, {
@@ -350,21 +350,21 @@ describe('Database Layer', () => {
         })
 
         expect(updated.name).toBe('Updated Name')
-        expect(updated.email).toBe('update@example.com') // unchanged
+        expect(updated.email).toBe('update@example.com.ai') // unchanged
       })
 
       it('should return the updated record', async () => {
         const created = await $.db.Customer.create({
           name: 'Original',
-          email: 'original@example.com',
+          email: 'original@example.com.ai',
         })
 
         const updated = await $.db.Customer.update(created.id, {
-          email: 'new@example.com',
+          email: 'new@example.com.ai',
         })
 
         expect(updated.id).toBe(created.id)
-        expect(updated.email).toBe('new@example.com')
+        expect(updated.email).toBe('new@example.com.ai')
       })
 
       it('should throw on non-existent id', async () => {
@@ -378,7 +378,7 @@ describe('Database Layer', () => {
       it('should delete a record by id', async () => {
         const created = await $.db.Customer.create({
           name: 'Delete Test',
-          email: 'delete@example.com',
+          email: 'delete@example.com.ai',
         })
 
         await $.db.Customer.delete(created.id)
@@ -390,7 +390,7 @@ describe('Database Layer', () => {
       it('should return void/undefined on successful delete', async () => {
         const created = await $.db.Customer.create({
           name: 'Delete Return Test',
-          email: 'deletereturn@example.com',
+          email: 'deletereturn@example.com.ai',
         })
 
         const result = await $.db.Customer.delete(created.id)
@@ -406,9 +406,9 @@ describe('Database Layer', () => {
 
     describe('list()', () => {
       it('should return all records', async () => {
-        await $.db.Customer.create({ name: 'Alice', email: 'alice@example.com' })
-        await $.db.Customer.create({ name: 'Bob', email: 'bob@example.com' })
-        await $.db.Customer.create({ name: 'Charlie', email: 'charlie@example.com' })
+        await $.db.Customer.create({ name: 'Alice', email: 'alice@example.com.ai' })
+        await $.db.Customer.create({ name: 'Bob', email: 'bob@example.com.ai' })
+        await $.db.Customer.create({ name: 'Charlie', email: 'charlie@example.com.ai' })
 
         const customers = await $.db.Customer.list()
 
@@ -419,7 +419,7 @@ describe('Database Layer', () => {
         for (let i = 0; i < 10; i++) {
           await $.db.Customer.create({
             name: `Customer ${i}`,
-            email: `customer${i}@example.com`,
+            email: `customer${i}@example.com.ai`,
           })
         }
 
@@ -440,9 +440,9 @@ describe('Database Layer', () => {
 
     describe('find()', () => {
       it('should find records matching filter criteria', async () => {
-        await $.db.Customer.create({ name: 'Alice', email: 'alice@example.com' })
-        await $.db.Customer.create({ name: 'Bob', email: 'bob@example.com' })
-        await $.db.Customer.create({ name: 'Alice Smith', email: 'asmith@example.com' })
+        await $.db.Customer.create({ name: 'Alice', email: 'alice@example.com.ai' })
+        await $.db.Customer.create({ name: 'Bob', email: 'bob@example.com.ai' })
+        await $.db.Customer.create({ name: 'Alice Smith', email: 'asmith@example.com.ai' })
 
         const results = await $.db.Customer.find({ name: 'Alice' })
 
@@ -451,20 +451,20 @@ describe('Database Layer', () => {
       })
 
       it('should support multiple filter fields (AND logic)', async () => {
-        await $.db.Customer.create({ name: 'Alice', email: 'alice@example.com' })
-        await $.db.Customer.create({ name: 'Alice', email: 'alice2@example.com' })
+        await $.db.Customer.create({ name: 'Alice', email: 'alice@example.com.ai' })
+        await $.db.Customer.create({ name: 'Alice', email: 'alice2@example.com.ai' })
 
         const results = await $.db.Customer.find({
           name: 'Alice',
-          email: 'alice@example.com',
+          email: 'alice@example.com.ai',
         })
 
         expect(results).toHaveLength(1)
-        expect(results[0].email).toBe('alice@example.com')
+        expect(results[0].email).toBe('alice@example.com.ai')
       })
 
       it('should return empty array when no matches', async () => {
-        await $.db.Customer.create({ name: 'Alice', email: 'alice@example.com' })
+        await $.db.Customer.create({ name: 'Alice', email: 'alice@example.com.ai' })
 
         const results = await $.db.Customer.find({ name: 'Bob' })
 
@@ -653,7 +653,7 @@ describe('Database Layer', () => {
       // DBPromise should allow chaining operations
       const promise = $.db.Customer.create({
         name: 'Pipeline Test',
-        email: 'pipe@example.com',
+        email: 'pipe@example.com.ai',
       })
 
       // Should have then/catch for Promise compatibility
@@ -664,9 +664,9 @@ describe('Database Layer', () => {
     it('should batch multiple operations efficiently', async () => {
       // Multiple creates should be batchable
       const results = await Promise.all([
-        $.db.Customer.create({ name: 'A', email: 'a@example.com' }),
-        $.db.Customer.create({ name: 'B', email: 'b@example.com' }),
-        $.db.Customer.create({ name: 'C', email: 'c@example.com' }),
+        $.db.Customer.create({ name: 'A', email: 'a@example.com.ai' }),
+        $.db.Customer.create({ name: 'B', email: 'b@example.com.ai' }),
+        $.db.Customer.create({ name: 'C', email: 'c@example.com.ai' }),
       ])
 
       expect(results).toHaveLength(3)

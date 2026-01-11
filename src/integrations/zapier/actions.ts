@@ -121,7 +121,7 @@ export function getHttpMethodForVerb(verbName: string): 'GET' | 'POST' | 'PUT' |
  * const action = generateAction({
  *   nounName: 'Order',
  *   verbName: 'fulfill',
- *   apiBaseUrl: 'https://api.example.com',
+ *   apiBaseUrl: 'https://api.example.com.ai',
  *   parameters: [
  *     { name: 'orderId', type: 'string', required: true },
  *     { name: 'trackingNumber', type: 'string' },
@@ -235,7 +235,7 @@ export function generateAction(options: GenerateActionOptions): ZapierAction {
  * @example
  * ```ts
  * const actions = generateActionsForNoun('Order', {
- *   apiBaseUrl: 'https://api.example.com',
+ *   apiBaseUrl: 'https://api.example.com.ai',
  *   verbs: ['create', 'update', 'fulfill', 'cancel'],
  * })
  * // Returns actions for each verb
@@ -277,7 +277,7 @@ export function generateActionsForNoun(
  *     Order: ['create', 'update', 'fulfill'],
  *     User: ['create', 'invite'],
  *   },
- *   { apiBaseUrl: 'https://api.example.com' }
+ *   { apiBaseUrl: 'https://api.example.com.ai' }
  * )
  * // Returns actions for each noun's verbs
  * ```

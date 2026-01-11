@@ -187,6 +187,85 @@ export interface GeneratedSDK {
 }
 
 /**
+ * Publish options for a single target
+ */
+export interface PublishOptions {
+  /** Run in dry-run mode (no actual publishing) */
+  dryRun?: boolean
+  /** npm registry URL */
+  registry?: string
+  /** PyPI repository URL */
+  repository?: string
+  /** Go module path override */
+  module?: string
+}
+
+/**
+ * Publish result for a single target
+ */
+export interface SinglePublishResult {
+  success: boolean
+  package: string
+  version: string
+  registry?: string
+  repository?: string
+  module?: string
+  tag?: string
+}
+
+/**
+ * Publish all options
+ */
+export interface PublishAllOptions {
+  dryRun?: boolean
+  continueOnError?: boolean
+  npm?: { registry?: string }
+  pypi?: { repository?: string }
+  go?: { module?: string }
+}
+
+/**
+ * Publish all result
+ */
+export interface PublishAllResult {
+  npm: SinglePublishResult
+  pypi: SinglePublishResult
+  go: SinglePublishResult
+  summary: {
+    totalTargets: number
+    successful: number
+    failed: number
+  }
+}
+
+/**
+ * Changelog generation options
+ */
+export interface ChangelogDiffOptions {
+  previousNouns: NounsConfig
+  currentNouns: NounsConfig
+}
+
+/**
+ * Auto-publish configuration
+ */
+export interface AutoPublishOptions {
+  onSchemaChange: 'major' | 'minor' | 'patch'
+  targets: ('npm' | 'pypi' | 'go')[]
+  dryRun?: boolean
+}
+
+/**
+ * Auto-publish configuration result
+ */
+export interface AutoPublishConfig {
+  enabled: boolean
+  targets: ('npm' | 'pypi' | 'go')[]
+  versionBump: 'major' | 'minor' | 'patch'
+  dryRun: boolean
+}
+
+/**
  * SDK Generator instance
  */
 export interface SDKGenerator {
@@ -196,6 +275,20 @@ export interface SDKGenerator {
   generatePython(config?: PythonSDKConfig): GeneratedSDK
   /** Generate Go SDK */
   generateGo(config?: GoSDKConfig): GeneratedSDK
+
+  /** Publish SDK to a specific target (npm, pypi, or go) */
+  publish(target: 'npm' | 'pypi' | 'go', options?: PublishOptions): Promise<SinglePublishResult>
+  /** Publish SDKs to all targets */
+  publishAll(options?: PublishAllOptions): Promise<PublishAllResult>
+
+  /** Get hash of current schema for change detection */
+  getSchemaHash(): string
+  /** Get next semantic version based on bump type */
+  getNextVersion(bumpType: 'major' | 'minor' | 'patch'): string
+  /** Generate changelog from schema diff */
+  generateChangelog(diff: ChangelogDiffOptions): string
+  /** Set up auto-publish configuration */
+  setupAutoPublish(options: AutoPublishOptions): AutoPublishConfig
 }
 
 // ============================================================================
@@ -214,6 +307,13 @@ export interface TypeScriptSDKConfig {
   declarations?: boolean
   /** Target ECMAScript version */
   target?: 'ES2020' | 'ES2021' | 'ES2022' | 'ES2023'
+  /** npm publish configuration */
+  publishConfig?: {
+    /** npm registry URL */
+    registry?: string
+    /** Package access level */
+    access?: 'public' | 'restricted'
+  }
 }
 
 /**

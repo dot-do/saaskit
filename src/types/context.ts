@@ -125,12 +125,12 @@ export interface Context<T extends NounDefinitions = NounDefinitions> {
    * Access CRUD + search operations for each defined noun.
    * @example
    * ```ts
-   * await $.db.Customer.create({ name: 'John', email: 'john@example.com' })
+   * await $.db.Customer.create({ name: 'John', email: 'john@example.com.ai' })
    * await $.db.Customer.get('cus_123')
    * await $.db.Customer.update('cus_123', { name: 'Jane' })
    * await $.db.Customer.delete('cus_123')
    * await $.db.Customer.list()
-   * await $.db.Customer.find({ email: 'john@example.com' })
+   * await $.db.Customer.find({ email: 'john@example.com.ai' })
    * await $.db.Customer.search('john')
    * await $.db.Customer.semanticSearch('customers who like widgets')
    * ```

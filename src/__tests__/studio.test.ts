@@ -235,7 +235,7 @@ describe('SaaS.Studio - Management Console', () => {
       })
 
       it('searches customers by name or email', async () => {
-        const result = await studio.customers.search('john@example.com')
+        const result = await studio.customers.search('john@example.com.ai')
 
         expect(result.customers).toBeDefined()
         expect(Array.isArray(result.customers)).toBe(true)
@@ -550,7 +550,7 @@ describe('SaaS.Studio - Management Console', () => {
 
       it('invites new team member', async () => {
         const result = await studio.team.invite({
-          email: 'new@example.com',
+          email: 'new@example.com.ai',
           role: 'admin',
         })
 
@@ -1093,7 +1093,7 @@ describe('SaaS.Studio - Management Console', () => {
     describe('Email Channel', () => {
       it('configures email notifications', async () => {
         const result = await studio.notifications.configureEmail({
-          recipients: ['team@example.com', 'alerts@example.com'],
+          recipients: ['team@example.com.ai', 'alerts@example.com.ai'],
           includeDetails: true,
           subjectPrefix: '[Alert]',
         })

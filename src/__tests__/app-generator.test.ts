@@ -240,8 +240,8 @@ describe('App Generator', () => {
       const CustomerList = app.getPage('customers')
 
       const mockCustomers = [
-        { id: '1', name: 'John Doe', email: 'john@example.com' },
-        { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
+        { id: '1', name: 'John Doe', email: 'john@example.com.ai' },
+        { id: '2', name: 'Jane Smith', email: 'jane@example.com.ai' },
       ]
 
       renderWithProviders(createElement(CustomerList), {
@@ -251,7 +251,7 @@ describe('App Generator', () => {
 
       await waitFor(() => {
         expect(screen.getByText('John Doe')).toBeTruthy()
-        expect(screen.getByText('jane@example.com')).toBeTruthy()
+        expect(screen.getByText('jane@example.com.ai')).toBeTruthy()
       })
     })
 
@@ -334,7 +334,7 @@ describe('App Generator', () => {
       const CustomerList = app.getPage('customers')
 
       const mockCustomers = [
-        { id: 'cus_1', name: 'John Doe', email: 'john@example.com' },
+        { id: 'cus_1', name: 'John Doe', email: 'john@example.com.ai' },
       ]
 
       renderWithProviders(createElement(CustomerList), {
@@ -639,7 +639,7 @@ describe('App Generator', () => {
       const customer = {
         id: 'cus_1',
         name: 'John Doe',
-        email: 'john@example.com',
+        email: 'john@example.com.ai',
         createdAt: '2024-01-01T00:00:00Z',
       }
 
@@ -651,7 +651,7 @@ describe('App Generator', () => {
 
       await waitFor(() => {
         expect(screen.getByText('John Doe')).toBeTruthy()
-        expect(screen.getByText('john@example.com')).toBeTruthy()
+        expect(screen.getByText('john@example.com.ai')).toBeTruthy()
       })
     })
 
@@ -663,7 +663,7 @@ describe('App Generator', () => {
       const customer = {
         id: 'cus_1',
         name: 'John Doe',
-        email: 'john@example.com',
+        email: 'john@example.com.ai',
         orders: [
           { id: 'ord_1', total: 100, status: 'paid' },
           { id: 'ord_2', total: 250, status: 'shipped' },
@@ -692,7 +692,7 @@ describe('App Generator', () => {
       const ShowCustomer = app.getPage('customers/:id')
       const navigate = vi.fn()
 
-      const customer = { id: 'cus_1', name: 'John Doe', email: 'john@example.com' }
+      const customer = { id: 'cus_1', name: 'John Doe', email: 'john@example.com.ai' }
 
       renderWithProviders(createElement(ShowCustomer), {
         app: config,
@@ -906,7 +906,7 @@ describe('App Generator', () => {
       const CustomerList = app.getPage('customers')
 
       const initialCustomers = [
-        { id: 'cus_1', name: 'John', email: 'john@example.com' },
+        { id: 'cus_1', name: 'John', email: 'john@example.com.ai' },
       ]
 
       const { realtimeEmit } = renderWithProviders(createElement(CustomerList), {
@@ -919,7 +919,7 @@ describe('App Generator', () => {
         type: 'created',
         noun: 'Customer',
         id: 'cus_2',
-        data: { id: 'cus_2', name: 'Jane', email: 'jane@example.com' },
+        data: { id: 'cus_2', name: 'Jane', email: 'jane@example.com.ai' },
       })
 
       await waitFor(() => {
@@ -959,8 +959,8 @@ describe('App Generator', () => {
       const CustomerList = app.getPage('customers')
 
       const initialCustomers = [
-        { id: 'cus_1', name: 'John', email: 'john@example.com' },
-        { id: 'cus_2', name: 'Jane', email: 'jane@example.com' },
+        { id: 'cus_1', name: 'John', email: 'john@example.com.ai' },
+        { id: 'cus_2', name: 'Jane', email: 'jane@example.com.ai' },
       ]
 
       const { realtimeEmit } = renderWithProviders(createElement(CustomerList), {
@@ -1057,7 +1057,7 @@ describe('App Generator', () => {
       const orgSettings = {
         name: 'Acme Corp',
         slug: 'acme',
-        domain: 'acme.example.com',
+        domain: 'acme.example.com.ai',
       }
 
       renderWithProviders(createElement(Settings), {
@@ -1106,8 +1106,8 @@ describe('App Generator', () => {
       const Team = app.getPage('team')
 
       const teamMembers = [
-        { id: 'usr_1', email: 'admin@example.com', name: 'Admin', role: 'admin' },
-        { id: 'usr_2', email: 'member@example.com', name: 'Member', role: 'member' },
+        { id: 'usr_1', email: 'admin@example.com.ai', name: 'Admin', role: 'admin' },
+        { id: 'usr_2', email: 'member@example.com.ai', name: 'Member', role: 'member' },
       ]
 
       renderWithProviders(createElement(Team), {
@@ -1116,8 +1116,8 @@ describe('App Generator', () => {
       })
 
       await waitFor(() => {
-        expect(screen.getByText('admin@example.com')).toBeTruthy()
-        expect(screen.getByText('member@example.com')).toBeTruthy()
+        expect(screen.getByText('admin@example.com.ai')).toBeTruthy()
+        expect(screen.getByText('member@example.com.ai')).toBeTruthy()
       })
     })
 
@@ -1166,7 +1166,7 @@ describe('App Generator', () => {
       const emailInput = await screen.findByLabelText(/email/i)
       const roleSelect = screen.getByLabelText(/role/i)
 
-      fireEvent.change(emailInput, { target: { value: 'new@example.com' } })
+      fireEvent.change(emailInput, { target: { value: 'new@example.com.ai' } })
       fireEvent.change(roleSelect, { target: { value: 'member' } })
 
       const sendInviteButton = screen.getByRole('button', { name: /send invite/i })
@@ -1175,7 +1175,7 @@ describe('App Generator', () => {
       await waitFor(() => {
         expect(onInvite).toHaveBeenCalledWith(
           expect.objectContaining({
-            email: 'new@example.com',
+            email: 'new@example.com.ai',
             role: 'member',
           })
         )
@@ -1189,8 +1189,8 @@ describe('App Generator', () => {
       const onRemove = vi.fn().mockResolvedValue({})
 
       const teamMembers = [
-        { id: 'usr_1', email: 'admin@example.com', name: 'Admin', role: 'admin' },
-        { id: 'usr_2', email: 'member@example.com', name: 'Member', role: 'member' },
+        { id: 'usr_1', email: 'admin@example.com.ai', name: 'Admin', role: 'admin' },
+        { id: 'usr_2', email: 'member@example.com.ai', name: 'Member', role: 'member' },
       ]
 
       renderWithProviders(createElement(Team), {
@@ -1219,7 +1219,7 @@ describe('App Generator', () => {
       const onUpdateRole = vi.fn().mockResolvedValue({})
 
       const teamMembers = [
-        { id: 'usr_2', email: 'member@example.com', name: 'Member', role: 'member' },
+        { id: 'usr_2', email: 'member@example.com.ai', name: 'Member', role: 'member' },
       ]
 
       renderWithProviders(createElement(Team), {
@@ -1513,7 +1513,7 @@ describe('App Generator', () => {
       const webhooks = [
         {
           id: 'wh_1',
-          url: 'https://example.com/webhook',
+          url: 'https://example.com.ai/webhook',
           events: ['Order.created', 'Order.paid'],
           status: 'active',
         },
@@ -1525,7 +1525,7 @@ describe('App Generator', () => {
       })
 
       await waitFor(() => {
-        expect(screen.getByText('https://example.com/webhook')).toBeTruthy()
+        expect(screen.getByText('https://example.com.ai/webhook')).toBeTruthy()
         expect(screen.getByText(/Order.created/)).toBeTruthy()
       })
     })
@@ -1594,7 +1594,7 @@ describe('App Generator', () => {
       const onTest = vi.fn().mockResolvedValue({ success: true, statusCode: 200 })
 
       const webhooks = [
-        { id: 'wh_1', url: 'https://example.com/webhook', events: ['Order.created'], status: 'active' },
+        { id: 'wh_1', url: 'https://example.com.ai/webhook', events: ['Order.created'], status: 'active' },
       ]
 
       renderWithProviders(createElement(Webhooks), {
@@ -1620,7 +1620,7 @@ describe('App Generator', () => {
       const webhooks = [
         {
           id: 'wh_1',
-          url: 'https://example.com/webhook',
+          url: 'https://example.com.ai/webhook',
           events: ['Order.created'],
           status: 'active',
           deliveries: [
@@ -1652,7 +1652,7 @@ describe('App Generator', () => {
       const onDelete = vi.fn().mockResolvedValue({})
 
       const webhooks = [
-        { id: 'wh_1', url: 'https://example.com/webhook', events: ['Order.created'], status: 'active' },
+        { id: 'wh_1', url: 'https://example.com.ai/webhook', events: ['Order.created'], status: 'active' },
       ]
 
       renderWithProviders(createElement(Webhooks), {
@@ -1681,7 +1681,7 @@ describe('App Generator', () => {
       // User without admin permissions
       const user = {
         id: 'usr_1',
-        email: 'member@example.com',
+        email: 'member@example.com.ai',
         role: 'member',
         permissions: ['customers.read', 'orders.read'],
       }
