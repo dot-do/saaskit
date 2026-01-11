@@ -3,7 +3,15 @@
  *
  * Shared proxy creation logic for lazy database accessor instantiation.
  * Used by both create-saas.ts (core SaaS context) and database/index.ts (pure database layer).
+ *
+ * This module provides database-specific proxy functionality with features like
+ * initialization checks and custom error messages for unregistered nouns.
+ *
+ * Built on top of the generic createCachedProxy utility from utils/proxy-factory.ts,
+ * adding database-specific features like initialization guards.
  */
+
+import { createCachedProxy, type CachedProxyResult } from '../utils/proxy-factory'
 
 /**
  * Configuration for creating a database proxy
@@ -42,6 +50,21 @@ export interface DbProxyConfig<TAccessor> {
 }
 
 /**
+ * Result from createDbProxy including the proxy and cache management functions
+ */
+export interface DbProxyResult<TAccessor> {
+  /**
+   * The proxy object that provides lazy accessor creation
+   */
+  proxy: Record<string, TAccessor | undefined>
+
+  /**
+   * Clear the accessor cache for a specific noun or all nouns
+   */
+  clearCache: (nounName?: string) => void
+}
+
+/**
  * Create a database proxy with lazy accessor creation and caching
  *
  * This creates a Proxy that:
@@ -51,13 +74,17 @@ export interface DbProxyConfig<TAccessor> {
  * - Supports `in` operator checks via `has` trap
  * - Supports Object.keys() enumeration if getNounNames is provided
  *
+ * Built on top of createCachedProxy from utils/proxy-factory.ts, adding:
+ * - Initialization guard (isInitialized/notInitializedError)
+ * - Custom unregistered noun error messages
+ *
  * @typeParam TAccessor - The database accessor type
  * @param config - Configuration for the proxy behavior
- * @returns A proxy object that behaves like Record<string, TAccessor | undefined>
+ * @returns An object with the proxy and cache management functions
  *
  * @example
  * ```ts
- * const dbProxy = createDbProxy({
+ * const { proxy: dbProxy, clearCache } = createDbProxy({
  *   isRegistered: (name) => name in registeredNouns,
  *   createAccessor: (name) => createDatabaseAccessor(name, schema, storage),
  *   getNounNames: () => Object.keys(registeredNouns),
@@ -69,11 +96,14 @@ export interface DbProxyConfig<TAccessor> {
  * // Check if noun exists
  * 'User' in dbProxy // true
  * 'Unknown' in dbProxy // false
+ *
+ * // Clear cache when noun schema changes
+ * clearCache('User')
  * ```
  */
 export function createDbProxy<TAccessor>(
   config: DbProxyConfig<TAccessor>
-): Record<string, TAccessor | undefined> {
+): DbProxyResult<TAccessor> {
   const {
     isInitialized,
     notInitializedError,
@@ -82,10 +112,10 @@ export function createDbProxy<TAccessor>(
     getNounNames,
     unregisteredError,
   } = config
-  const accessorCache = new Map<string, TAccessor>()
 
   /**
-   * Check if initialization is required and throw if not initialized
+   * Check if initialization is required and throw if not initialized.
+   * This is called on property access (not on 'in' operator or enumeration).
    */
   function checkInitialized(): void {
     if (isInitialized && !isInitialized()) {
@@ -93,17 +123,39 @@ export function createDbProxy<TAccessor>(
     }
   }
 
-  return new Proxy({} as Record<string, TAccessor | undefined>, {
-    get(_target, prop: string | symbol) {
-      // Skip Symbol properties (used for internal JS operations)
+  // Use the base createCachedProxy utility for core proxy functionality
+  const { proxy: baseProxy, clearCache, cache } = createCachedProxy<TAccessor>({
+    // Dynamic valid keys based on getNounNames (if provided) or empty set
+    validKeys: () => {
+      // If not initialized, return empty set to prevent key enumeration
+      if (isInitialized && !isInitialized()) {
+        return new Set<string>()
+      }
+      return getNounNames ? new Set(getNounNames()) : new Set<string>()
+    },
+
+    createValue: createAccessor,
+
+    onInvalidKey: (key: string) => {
+      // For invalid keys, throw custom error if provided
+      if (unregisteredError) {
+        throw new Error(unregisteredError(key))
+      }
+      // Otherwise, let it return undefined (handled by base proxy)
+    },
+  })
+
+  // Wrap the base proxy to add initialization checks on property access
+  const proxy = new Proxy(baseProxy as Record<string, TAccessor | undefined>, {
+    get(target, prop: string | symbol): TAccessor | undefined {
       if (typeof prop !== 'string') {
         return undefined
       }
 
-      // Check if nouns have been initialized
+      // Check initialization before any property access
       checkInitialized()
 
-      // Return undefined or throw if noun is not registered
+      // Check if registered (before accessing base proxy to provide better errors)
       if (!isRegistered(prop)) {
         if (unregisteredError) {
           throw new Error(unregisteredError(prop))
@@ -111,16 +163,18 @@ export function createDbProxy<TAccessor>(
         return undefined
       }
 
-      // Return cached accessor or create new one
-      let accessor = accessorCache.get(prop)
-      if (!accessor) {
-        accessor = createAccessor(prop)
-        accessorCache.set(prop, accessor)
+      // Use cached value from base proxy or create new one
+      const cached = cache.get(prop)
+      if (cached !== undefined) {
+        return cached
       }
-      return accessor
+
+      const value = createAccessor(prop)
+      cache.set(prop, value)
+      return value
     },
 
-    has(_target, prop: string | symbol) {
+    has(target, prop: string | symbol): boolean {
       if (typeof prop !== 'string') {
         return false
       }
@@ -131,18 +185,15 @@ export function createDbProxy<TAccessor>(
       return isRegistered(prop)
     },
 
-    ownKeys() {
+    ownKeys(): string[] {
       // Don't throw on enumeration, return empty if not initialized
       if (isInitialized && !isInitialized()) {
         return []
       }
-      if (getNounNames) {
-        return getNounNames()
-      }
-      return []
+      return getNounNames ? getNounNames() : []
     },
 
-    getOwnPropertyDescriptor(_target, prop: string | symbol) {
+    getOwnPropertyDescriptor(target, prop: string | symbol): PropertyDescriptor | undefined {
       if (typeof prop !== 'string') {
         return undefined
       }
@@ -157,10 +208,10 @@ export function createDbProxy<TAccessor>(
       }
 
       // Get or create the accessor
-      let accessor = accessorCache.get(prop)
+      let accessor = cache.get(prop)
       if (!accessor) {
         accessor = createAccessor(prop)
-        accessorCache.set(prop, accessor)
+        cache.set(prop, accessor)
       }
 
       return {
@@ -170,6 +221,11 @@ export function createDbProxy<TAccessor>(
       }
     },
   })
+
+  return {
+    proxy,
+    clearCache,
+  }
 }
 
 /**

@@ -3,15 +3,19 @@
  *
  * Creates a SaaS context with optional built-in nouns for common patterns:
  * - User, Organization, Plan, APIKey, Webhook, Usage, Metric
+ *
+ * Note: This module uses a specialized database accessor with SaaS-specific
+ * validation (email uniqueness, API key generation, webhook secrets, etc.).
+ * For a pure database layer without SaaS features, see database/index.ts
+ * which uses the shared accessor-factory.
  */
 
-import { randomBytes, createHash, createHmac } from 'crypto'
+import { randomBytes, createHash } from 'crypto'
 import type { NounSchema, FieldDefinition } from '../parsers/noun-parser'
 import {
   BUILT_IN_SCHEMAS,
   BUILT_IN_VERBS,
   BUILT_IN_NOUN_NAMES,
-  type BuiltInNounName,
   mergeWithBuiltIn,
 } from './built-ins'
 import { createDbProxy as createDbProxyUtil } from '../database/proxy'
@@ -482,11 +486,12 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
    * Create DB proxy with lazy accessor creation using shared utility
    */
   function createDbProxy(): Record<string, DbAccessor | undefined> {
-    return createDbProxyUtil<DbAccessor>({
+    const { proxy } = createDbProxyUtil<DbAccessor>({
       isRegistered: (nounName) => nounName in registeredNouns,
       createAccessor: createDbAccessor,
       getNounNames: () => Object.keys(registeredNouns),
     })
+    return proxy
   }
 
   /**

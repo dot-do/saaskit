@@ -828,6 +828,75 @@ Builder.Domains
 
 ---
 
+## Requirements
+
+### Runtime Environment
+
+| Requirement | Version | Notes |
+|-------------|---------|-------|
+| **Node.js** | `>=18.0.0` | Required for native fetch, ES modules |
+| **React** | `^18.0.0` or `^19.0.0` | Peer dependency for UI components |
+
+### Environment Variables
+
+SaaSkit uses environment variables for authentication and configuration:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SAASKIT_API_TOKEN` | **Yes** (production) | API token for Platform.do services (Emails.do, Texts.do, etc.). Development mode uses a fallback token with a console warning. |
+| `SAAS_API_KEY` | For deployment | Required when running `saaskit deploy` to authenticate with SaaS.Dev hosting. |
+| `NODE_ENV` | No | Set to `test` to suppress development warnings. |
+
+**Integration-specific variables** (optional, used via `$.env`):
+- `STRIPE_API_KEY` / `STRIPE_SECRET_KEY` - For Stripe payments
+- `APOLLO_API_KEY` - For Apollo enrichment
+- `SLACK_WEBHOOK` - For Slack notifications
+- Any custom variables your app needs via `$.env.YOUR_VAR`
+
+### Platform Services
+
+SaaSkit connects to the **Platform.do** ecosystem for backend services:
+
+| Service | URL | Purpose |
+|---------|-----|---------|
+| Emails.do | `emails.do` | Transactional & marketing email |
+| Texts.do | `texts.do` | SMS messaging |
+| Calls.do | `calls.do` | Voice calls & AI receptionist |
+| Payments.do | `payments.do` | Stripe integration |
+| APIs.do | `apis.do` | 9000+ third-party integrations |
+
+**Note:** These services require a `SAASKIT_API_TOKEN`. During development, a fallback token is used automatically.
+
+### Optional Dependencies
+
+```json
+{
+  "optionalDependencies": {
+    "@dotdo/react": "^0.1.0"  // Enhanced React integration
+  }
+}
+```
+
+### Development Setup
+
+1. Create a `.env` file from the example:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Add your API token:
+   ```bash
+   # .env
+   SAASKIT_API_TOKEN=your-token-here
+   ```
+
+3. For deployment, also add:
+   ```bash
+   SAAS_API_KEY=your-deployment-key
+   ```
+
+---
+
 ## Get Started
 
 ### Install

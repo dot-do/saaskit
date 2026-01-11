@@ -1,21 +1,33 @@
 /**
- * CLI Generator Tests
+ * CLI Generator Tests (RED Phase - TDD)
  *
- * Tests for the CLI generator that creates command-line interfaces
- * from noun/verb definitions.
+ * These tests define the expected API for the CLI generator that creates
+ * a complete command-line interface for SaaS applications. All tests should
+ * FAIL initially because the implementation doesn't exist yet.
  *
  * The CLI generator provides:
- * - Authentication commands (login, logout)
- * - CRUD commands for each noun
- * - Custom verb commands
- * - Configuration management
- * - Shell completions
+ * - `yourapp login` - Authenticate user
+ * - `yourapp [noun] list` - List records of a noun type
+ * - `yourapp [noun] create` - Create a new record
+ * - `yourapp [noun] get <id>` - Get a single record
+ * - `yourapp [noun] [verb] <id>` - Execute a verb on a record
+ * - `yourapp config set` - Store configuration values
+ * - `yourapp config get` - Retrieve configuration values
+ * - Shell completions - Autocomplete for bash/zsh/fish
+ * - Help text - Generated documentation for all commands
+ * - Error messages - Helpful error formatting
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'fs'
+import { join } from 'path'
+import { tmpdir } from 'os'
 
-import { createCLIGenerator, generateCLI } from '../cli-generator'
-import type { CLIConfig, CLIGenerator, GeneratedCLI } from '../cli-generator/types'
+// These imports will fail until implementation exists
+// @ts-expect-error - Implementation not yet created
+import { createCLIGenerator, generateCLI, createCLIRunner } from '../cli-generator'
+// @ts-expect-error - Implementation not yet created
+import type { CLIConfig, CLIGenerator, GeneratedCLI, CLIRunner, CommandResult } from '../cli-generator/types'
 
 describe('CLI Generator', () => {
   /**
@@ -598,6 +610,627 @@ describe('CLI Generator', () => {
       expect(cli).toBeDefined()
       expect(cli.files).toBeDefined()
       expect(cli.cliName).toBe('test')
+    })
+  })
+
+  // ============================================================================
+  // CLI Runner Tests - Runtime Execution
+  // ============================================================================
+
+  describe('CLI Runner', () => {
+    /**
+     * Helper to create a CLI runner for testing
+     */
+    const createTestRunner = (config?: Partial<CLIConfig>): CLIRunner => {
+      return createCLIRunner({
+        nouns: config?.nouns ?? {
+          Customer: { name: 'string', email: 'string' },
+          Order: { total: 'number', status: 'pending | paid | shipped' },
+        },
+        verbs: config?.verbs ?? {
+          Order: { pay: ($: unknown) => {}, ship: ($: unknown) => {} },
+        },
+        cliName: config?.cliName ?? 'testapp',
+        packageName: config?.packageName ?? 'testapp-cli',
+        version: config?.version ?? '1.0.0',
+        baseUrl: config?.baseUrl ?? 'https://api.test.com',
+      })
+    }
+
+    describe('yourapp login', () => {
+      let testConfigDir: string
+
+      beforeEach(() => {
+        testConfigDir = join(tmpdir(), `cli-test-${Date.now()}`)
+        mkdirSync(testConfigDir, { recursive: true })
+      })
+
+      afterEach(() => {
+        if (existsSync(testConfigDir)) {
+          rmSync(testConfigDir, { recursive: true, force: true })
+        }
+      })
+
+      it('should authenticate user with API key', async () => {
+        const runner = createTestRunner()
+
+        const result = await runner.execute(['login', '--api-key', 'sk_test_12345'], {
+          configDir: testConfigDir,
+        })
+
+        expect(result.success).toBe(true)
+        expect(result.message).toMatch(/logged in|authenticated|success/i)
+      })
+
+      it('should store credentials after successful login', async () => {
+        const runner = createTestRunner()
+
+        await runner.execute(['login', '--api-key', 'sk_test_12345'], {
+          configDir: testConfigDir,
+        })
+
+        const credentialsPath = join(testConfigDir, 'credentials.json')
+        expect(existsSync(credentialsPath)).toBe(true)
+      })
+
+      it('should reject invalid API key format', async () => {
+        const runner = createTestRunner()
+
+        const result = await runner.execute(['login', '--api-key', 'invalid'], {
+          configDir: testConfigDir,
+        })
+
+        expect(result.success).toBe(false)
+        expect(result.error).toMatch(/invalid.*key|format/i)
+      })
+
+      it('should display user info after successful login', async () => {
+        const runner = createTestRunner()
+        const mockValidate = vi.fn().mockResolvedValue({
+          valid: true,
+          user: { email: 'user@example.com', organization: 'Acme' },
+        })
+
+        const result = await runner.execute(['login', '--api-key', 'sk_valid'], {
+          configDir: testConfigDir,
+          validateCredentials: mockValidate,
+        })
+
+        expect(result.success).toBe(true)
+        expect(result.output).toMatch(/user@example.com/)
+      })
+    })
+
+    describe('yourapp [noun] list', () => {
+      it('should return list of records', async () => {
+        const runner = createTestRunner()
+        const mockFetch = vi.fn().mockResolvedValue({
+          data: [
+            { id: 'cust_1', name: 'John', email: 'john@example.com' },
+            { id: 'cust_2', name: 'Jane', email: 'jane@example.com' },
+          ],
+        })
+
+        const result = await runner.execute(['customer', 'list'], {
+          fetch: mockFetch,
+        })
+
+        expect(result.success).toBe(true)
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.objectContaining({
+            method: 'GET',
+            path: '/customers',
+          })
+        )
+      })
+
+      it('should support --limit and --offset pagination', async () => {
+        const runner = createTestRunner()
+        const mockFetch = vi.fn().mockResolvedValue({ data: [] })
+
+        await runner.execute(['customer', 'list', '--limit', '10', '--offset', '20'], {
+          fetch: mockFetch,
+        })
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.objectContaining({
+            query: expect.objectContaining({ limit: '10', offset: '20' }),
+          })
+        )
+      })
+
+      it('should support --filter for filtering', async () => {
+        const runner = createTestRunner()
+        const mockFetch = vi.fn().mockResolvedValue({ data: [] })
+
+        await runner.execute(['order', 'list', '--filter', 'status=paid'], {
+          fetch: mockFetch,
+        })
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.objectContaining({
+            query: expect.objectContaining({ status: 'paid' }),
+          })
+        )
+      })
+
+      it('should support --output json format', async () => {
+        const runner = createTestRunner()
+        const mockFetch = vi.fn().mockResolvedValue({
+          data: [{ id: 'c1', name: 'Test' }],
+        })
+
+        const result = await runner.execute(['customer', 'list', '--output', 'json'], {
+          fetch: mockFetch,
+        })
+
+        expect(() => JSON.parse(result.output)).not.toThrow()
+      })
+
+      it('should require authentication', async () => {
+        const runner = createTestRunner()
+
+        const result = await runner.execute(['customer', 'list'], {
+          authenticated: false,
+        })
+
+        expect(result.success).toBe(false)
+        expect(result.error).toMatch(/not authenticated|login required/i)
+      })
+    })
+
+    describe('yourapp [noun] create', () => {
+      it('should create a new record', async () => {
+        const runner = createTestRunner()
+        const mockFetch = vi.fn().mockResolvedValue({
+          id: 'cust_new',
+          name: 'New Customer',
+          email: 'new@example.com',
+        })
+
+        const result = await runner.execute(
+          ['customer', 'create', '--name', 'New Customer', '--email', 'new@example.com'],
+          { fetch: mockFetch }
+        )
+
+        expect(result.success).toBe(true)
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.objectContaining({
+            method: 'POST',
+            path: '/customers',
+            body: expect.objectContaining({
+              name: 'New Customer',
+              email: 'new@example.com',
+            }),
+          })
+        )
+      })
+
+      it('should accept JSON input with --data flag', async () => {
+        const runner = createTestRunner()
+        const mockFetch = vi.fn().mockResolvedValue({ id: 'cust_new' })
+
+        await runner.execute(
+          ['customer', 'create', '--data', '{"name":"JSON","email":"json@example.com"}'],
+          { fetch: mockFetch }
+        )
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.objectContaining({
+            body: expect.objectContaining({
+              name: 'JSON',
+              email: 'json@example.com',
+            }),
+          })
+        )
+      })
+
+      it('should validate required fields', async () => {
+        const runner = createTestRunner()
+
+        const result = await runner.execute(['customer', 'create', '--name', 'No Email'], {
+          fetch: vi.fn(),
+        })
+
+        expect(result.success).toBe(false)
+        expect(result.error).toMatch(/missing.*required|email.*required/i)
+      })
+    })
+
+    describe('yourapp [noun] get <id>', () => {
+      it('should return a single record by id', async () => {
+        const runner = createTestRunner()
+        const mockFetch = vi.fn().mockResolvedValue({
+          id: 'cust_123',
+          name: 'John Doe',
+          email: 'john@example.com',
+        })
+
+        const result = await runner.execute(['customer', 'get', 'cust_123'], {
+          fetch: mockFetch,
+        })
+
+        expect(result.success).toBe(true)
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.objectContaining({
+            method: 'GET',
+            path: '/customers/cust_123',
+          })
+        )
+      })
+
+      it('should handle not found error', async () => {
+        const runner = createTestRunner()
+        const mockFetch = vi.fn().mockRejectedValue({
+          status: 404,
+          error: 'Not found',
+        })
+
+        const result = await runner.execute(['customer', 'get', 'nonexistent'], {
+          fetch: mockFetch,
+        })
+
+        expect(result.success).toBe(false)
+        expect(result.error).toMatch(/not found/i)
+      })
+
+      it('should require id argument', async () => {
+        const runner = createTestRunner()
+
+        const result = await runner.execute(['customer', 'get'], {
+          fetch: vi.fn(),
+        })
+
+        expect(result.success).toBe(false)
+        expect(result.error).toMatch(/missing.*id|id.*required/i)
+      })
+    })
+
+    describe('yourapp [noun] [verb] <id>', () => {
+      it('should execute a verb on a record', async () => {
+        const runner = createTestRunner()
+        const mockFetch = vi.fn().mockResolvedValue({
+          id: 'order_123',
+          status: 'paid',
+        })
+
+        const result = await runner.execute(['order', 'pay', 'order_123'], {
+          fetch: mockFetch,
+        })
+
+        expect(result.success).toBe(true)
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.objectContaining({
+            method: 'POST',
+            path: '/orders/order_123/pay',
+          })
+        )
+      })
+
+      it('should pass input to verb', async () => {
+        const runner = createTestRunner()
+        const mockFetch = vi.fn().mockResolvedValue({ success: true })
+
+        await runner.execute(
+          ['order', 'ship', 'order_123', '--tracking', 'TRACK123'],
+          { fetch: mockFetch }
+        )
+
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.objectContaining({
+            body: expect.objectContaining({
+              tracking: 'TRACK123',
+            }),
+          })
+        )
+      })
+
+      it('should require id for verb execution', async () => {
+        const runner = createTestRunner()
+
+        const result = await runner.execute(['order', 'pay'], {
+          fetch: vi.fn(),
+        })
+
+        expect(result.success).toBe(false)
+        expect(result.error).toMatch(/missing.*id|id.*required/i)
+      })
+
+      it('should handle unknown verb', async () => {
+        const runner = createTestRunner()
+
+        const result = await runner.execute(['customer', 'unknownverb', 'cust_123'], {
+          fetch: vi.fn(),
+        })
+
+        expect(result.success).toBe(false)
+        expect(result.error).toMatch(/unknown.*verb|verb.*not found|invalid.*command/i)
+      })
+    })
+
+    describe('yourapp config set/get', () => {
+      let testConfigDir: string
+
+      beforeEach(() => {
+        testConfigDir = join(tmpdir(), `cli-config-${Date.now()}`)
+        mkdirSync(testConfigDir, { recursive: true })
+      })
+
+      afterEach(() => {
+        if (existsSync(testConfigDir)) {
+          rmSync(testConfigDir, { recursive: true, force: true })
+        }
+      })
+
+      it('should store config values', async () => {
+        const runner = createTestRunner()
+
+        const result = await runner.execute(
+          ['config', 'set', 'api.url', 'https://custom.api.com'],
+          { configDir: testConfigDir }
+        )
+
+        expect(result.success).toBe(true)
+      })
+
+      it('should retrieve config values', async () => {
+        const runner = createTestRunner()
+
+        await runner.execute(
+          ['config', 'set', 'api.url', 'https://custom.api.com'],
+          { configDir: testConfigDir }
+        )
+
+        const result = await runner.execute(
+          ['config', 'get', 'api.url'],
+          { configDir: testConfigDir }
+        )
+
+        expect(result.success).toBe(true)
+        expect(result.output).toContain('https://custom.api.com')
+      })
+
+      it('should persist config to file', async () => {
+        const runner = createTestRunner()
+
+        await runner.execute(
+          ['config', 'set', 'output.format', 'json'],
+          { configDir: testConfigDir }
+        )
+
+        const configPath = join(testConfigDir, 'config.json')
+        expect(existsSync(configPath)).toBe(true)
+
+        const config = JSON.parse(readFileSync(configPath, 'utf-8'))
+        expect(config.output?.format).toBe('json')
+      })
+
+      it('should list all config values', async () => {
+        const runner = createTestRunner()
+
+        await runner.execute(['config', 'set', 'key1', 'value1'], { configDir: testConfigDir })
+        await runner.execute(['config', 'set', 'key2', 'value2'], { configDir: testConfigDir })
+
+        const result = await runner.execute(['config', 'list'], { configDir: testConfigDir })
+
+        expect(result.output).toContain('key1')
+        expect(result.output).toContain('key2')
+      })
+    })
+  })
+
+  // ============================================================================
+  // Help Text Generation
+  // ============================================================================
+
+  describe('Help Text', () => {
+    const createTestRunner = (config?: Partial<CLIConfig>): CLIRunner => {
+      return createCLIRunner({
+        nouns: config?.nouns ?? {
+          Customer: { name: 'string', email: 'string' },
+          Order: { total: 'number', status: 'pending | paid' },
+        },
+        verbs: config?.verbs ?? {
+          Order: { pay: ($: unknown) => {}, cancel: ($: unknown) => {} },
+        },
+        cliName: config?.cliName ?? 'myapp',
+        packageName: config?.packageName ?? 'myapp-cli',
+        version: config?.version ?? '1.0.0',
+        description: config?.description ?? 'My SaaS CLI',
+        baseUrl: config?.baseUrl ?? 'https://api.test.com',
+      })
+    }
+
+    it('should display main help with --help flag', async () => {
+      const runner = createTestRunner()
+
+      const result = await runner.execute(['--help'])
+
+      expect(result.success).toBe(true)
+      expect(result.output).toContain('myapp')
+      expect(result.output).toContain('My SaaS CLI')
+    })
+
+    it('should list all available commands in main help', async () => {
+      const runner = createTestRunner()
+
+      const result = await runner.execute(['--help'])
+
+      expect(result.output).toContain('customer')
+      expect(result.output).toContain('order')
+      expect(result.output).toContain('login')
+      expect(result.output).toContain('config')
+    })
+
+    it('should display command-specific help', async () => {
+      const runner = createTestRunner()
+
+      const result = await runner.execute(['customer', '--help'])
+
+      expect(result.output).toContain('customer')
+      expect(result.output).toContain('list')
+      expect(result.output).toContain('create')
+      expect(result.output).toContain('get')
+      expect(result.output).toContain('update')
+      expect(result.output).toContain('delete')
+    })
+
+    it('should display subcommand help with options', async () => {
+      const runner = createTestRunner()
+
+      const result = await runner.execute(['customer', 'create', '--help'])
+
+      expect(result.output).toContain('create')
+      expect(result.output).toContain('--name')
+      expect(result.output).toContain('--email')
+    })
+
+    it('should show verb help with id argument', async () => {
+      const runner = createTestRunner()
+
+      const result = await runner.execute(['order', 'pay', '--help'])
+
+      expect(result.output).toContain('pay')
+      expect(result.output).toContain('<id>')
+    })
+
+    it('should include examples in help', async () => {
+      const runner = createTestRunner()
+
+      const result = await runner.execute(['customer', '--help'])
+
+      expect(result.output).toMatch(/example|usage/i)
+    })
+
+    it('should display version with --version flag', async () => {
+      const runner = createTestRunner({ version: '2.5.0' })
+
+      const result = await runner.execute(['--version'])
+
+      expect(result.success).toBe(true)
+      expect(result.output).toContain('2.5.0')
+    })
+
+    it('should support help command syntax', async () => {
+      const runner = createTestRunner()
+
+      const result = await runner.execute(['help', 'customer'])
+
+      expect(result.success).toBe(true)
+      expect(result.output).toContain('customer')
+    })
+  })
+
+  // ============================================================================
+  // Error Message Quality
+  // ============================================================================
+
+  describe('Error Messages', () => {
+    const createTestRunner = (config?: Partial<CLIConfig>): CLIRunner => {
+      return createCLIRunner({
+        nouns: config?.nouns ?? {
+          Customer: { name: 'string', email: 'string' },
+        },
+        verbs: config?.verbs ?? {},
+        cliName: config?.cliName ?? 'testapp',
+        packageName: config?.packageName ?? 'testapp-cli',
+        version: config?.version ?? '1.0.0',
+        baseUrl: config?.baseUrl ?? 'https://api.test.com',
+      })
+    }
+
+    it('should provide helpful error for unknown command', async () => {
+      const runner = createTestRunner()
+
+      const result = await runner.execute(['unknowncommand'])
+
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/unknown.*command|command.*not found/i)
+    })
+
+    it('should suggest similar command on typo', async () => {
+      const runner = createTestRunner()
+
+      const result = await runner.execute(['custmer']) // typo
+
+      expect(result.success).toBe(false)
+      expect(result.suggestion).toMatch(/customer/i)
+    })
+
+    it('should show usage on missing required arguments', async () => {
+      const runner = createTestRunner()
+
+      const result = await runner.execute(['customer', 'get'])
+
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/missing.*id|id.*required/i)
+      expect(result.usage).toBeDefined()
+      expect(result.usage).toContain('customer get <id>')
+    })
+
+    it('should provide helpful error for invalid flag value', async () => {
+      const runner = createTestRunner()
+
+      const result = await runner.execute(['customer', 'list', '--limit', 'abc'])
+
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/limit.*number|invalid.*limit/i)
+    })
+
+    it('should format API errors nicely', async () => {
+      const runner = createTestRunner()
+      const mockFetch = vi.fn().mockRejectedValue({
+        status: 400,
+        error: 'Validation failed',
+        details: [{ field: 'email', message: 'Invalid email' }],
+      })
+
+      const result = await runner.execute(
+        ['customer', 'create', '--name', 'Test', '--email', 'bad'],
+        { fetch: mockFetch }
+      )
+
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('email')
+    })
+
+    it('should handle network errors gracefully', async () => {
+      const runner = createTestRunner()
+      const mockFetch = vi.fn().mockRejectedValue(new Error('ECONNREFUSED'))
+
+      const result = await runner.execute(['customer', 'list'], {
+        fetch: mockFetch,
+      })
+
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/network|connect|unavailable/i)
+    })
+
+    it('should handle timeout errors', async () => {
+      const runner = createTestRunner()
+      const mockFetch = vi.fn().mockRejectedValue(new Error('ETIMEDOUT'))
+
+      const result = await runner.execute(['customer', 'list'], {
+        fetch: mockFetch,
+      })
+
+      expect(result.success).toBe(false)
+      expect(result.error).toMatch(/timeout|timed out/i)
+    })
+
+    it('should include request ID in verbose mode', async () => {
+      const runner = createTestRunner()
+      const mockFetch = vi.fn().mockRejectedValue({
+        status: 500,
+        error: 'Internal error',
+        requestId: 'req_abc123',
+      })
+
+      const result = await runner.execute(['customer', 'list', '--verbose'], {
+        fetch: mockFetch,
+      })
+
+      expect(result.error).toContain('req_abc123')
     })
   })
 })

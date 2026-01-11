@@ -199,6 +199,9 @@ export type {
   FetchFunction,
 } from './types'
 
+// Billing types (used by ExtendedContext.billing)
+export type { BillingInterface } from './billing'
+
 // Utilities
 export { isNoun, noun, isVerb, verb, CRUD_VERBS, relationship, RelationshipPatterns, schedule, Schedules } from './types'
 

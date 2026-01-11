@@ -531,3 +531,51 @@ export function useAppContext(): AppContext {
   const { $ } = useSaaS()
   return $
 }
+
+// =============================================================================
+// @dotdo/react integration hooks
+// =============================================================================
+
+/**
+ * use$ - Access the workflow context from @dotdo/react
+ *
+ * Provides the full WorkflowContext for durable operations, scheduling,
+ * and Cap'n Web RPC access. Only available when @dotdo/react is installed
+ * and the SaaSProvider has a configured endpoint.
+ *
+ * @example
+ * ```tsx
+ * function TaskActions({ taskId }: { taskId: string }) {
+ *   const $ = use$()
+ *
+ *   const handleComplete = async () => {
+ *     // Durable operation with retries
+ *     await $.do(async () => {
+ *       await $.Task(taskId).complete()
+ *     })
+ *   }
+ *
+ *   return <button onClick={handleComplete}>Complete</button>
+ * }
+ * ```
+ *
+ * @throws Error if @dotdo/react is not installed or not configured
+ */
+export function use$(): WorkflowContext {
+  if (!dotdoAvailable || !use$Hook) {
+    throw new Error(
+      'use$ requires @dotdo/react to be installed. ' +
+        'Install it with: pnpm add @dotdo/react'
+    )
+  }
+  return use$Hook()
+}
+
+/**
+ * Check if @dotdo/react integration is available
+ *
+ * @returns true if @dotdo/react is installed and loaded
+ */
+export function isDotdoAvailable(): boolean {
+  return dotdoAvailable
+}

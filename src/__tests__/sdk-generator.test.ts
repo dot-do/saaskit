@@ -777,5 +777,624 @@ describe('SDK Generator', () => {
 
       expect(httpCode).toContain('X-API-Key')
     })
+
+    it('should validate API key is provided on client instantiation', () => {
+      const generator = createTestGenerator()
+      const sdk = generator.generateTypeScript()
+
+      const clientCode = sdk.files['src/client.ts']
+
+      // Should throw if apiKey is missing
+      expect(clientCode).toMatch(/throw.*api.?key|if\s*\(!.*apiKey/)
+    })
+
+    it('should support API key rotation without client reinstantiation', () => {
+      const generator = createTestGenerator()
+      const sdk = generator.generateTypeScript()
+
+      const clientCode = sdk.files['src/client.ts']
+
+      // Should have setter method for API key
+      expect(clientCode).toMatch(/setApiKey|set apiKey|updateConfig/)
+    })
+  })
+
+  // ============================================================================
+  // Subscriptions Receiving Events
+  // ============================================================================
+
+  describe('Subscriptions Receiving Events', () => {
+    describe('TypeScript SDK Subscriptions', () => {
+      it('should generate event callback types for each noun', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generateTypeScript()
+
+        const typesCode = sdk.files['src/types.ts']
+
+        expect(typesCode).toMatch(/UserCreatedEvent|OnUserCreated/)
+        expect(typesCode).toMatch(/UserUpdatedEvent|OnUserUpdated/)
+        expect(typesCode).toMatch(/UserDeletedEvent|OnUserDeleted/)
+        expect(typesCode).toMatch(/PostCreatedEvent|OnPostCreated/)
+      })
+
+      it('should generate subscription methods for CRUD events', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generateTypeScript()
+
+        const subsCode = sdk.files['src/subscriptions.ts'] || sdk.files['src/client.ts']
+
+        expect(subsCode).toMatch(/onUserCreated|subscribeUserCreated/)
+        expect(subsCode).toMatch(/onUserUpdated|subscribeUserUpdated/)
+        expect(subsCode).toMatch(/onUserDeleted|subscribeUserDeleted/)
+      })
+
+      it('should generate subscription methods for verb events', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generateTypeScript()
+
+        const subsCode = sdk.files['src/subscriptions.ts'] || sdk.files['src/client.ts']
+
+        // Verbs: invite, ban for User
+        expect(subsCode).toMatch(/onUserInvited|subscribeUserInvited/)
+        expect(subsCode).toMatch(/onUserBanned|subscribeUserBanned/)
+
+        // Verbs: publish, archive for Post
+        expect(subsCode).toMatch(/onPostPublished|subscribePostPublished/)
+        expect(subsCode).toMatch(/onPostArchived|subscribePostArchived/)
+      })
+
+      it('should include event payload with full entity data', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generateTypeScript()
+
+        const typesCode = sdk.files['src/types.ts']
+
+        // Event should contain the entity
+        expect(typesCode).toMatch(/data:\s*User|entity:\s*User|user:\s*User/)
+        expect(typesCode).toMatch(/timestamp|createdAt|occurredAt/)
+      })
+
+      it('should return unsubscribe function from subscription', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generateTypeScript()
+
+        const subsCode = sdk.files['src/subscriptions.ts'] || sdk.files['src/client.ts']
+
+        // Method should return cleanup function
+        expect(subsCode).toMatch(/:\s*\(\)\s*=>\s*void|:\s*Unsubscribe|unsubscribe/)
+      })
+
+      it('should support subscription to multiple events at once', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generateTypeScript()
+
+        const subsCode = sdk.files['src/subscriptions.ts'] || sdk.files['src/client.ts']
+
+        // Should have bulk subscription method
+        expect(subsCode).toMatch(/subscribe\s*\(\s*events|onEvents|subscribeAll/)
+      })
+
+      it('should handle reconnection with automatic resubscription', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generateTypeScript()
+
+        const subsCode = sdk.files['src/subscriptions.ts'] || sdk.files['src/client.ts']
+
+        expect(subsCode).toMatch(/reconnect|resubscribe|onReconnect/)
+      })
+    })
+
+    describe('Python SDK Subscriptions', () => {
+      it('should generate async subscription methods', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generatePython()
+
+        const subsCode = sdk.files['src/subscriptions.py'] || sdk.files['src/client.py']
+
+        expect(subsCode).toMatch(/async def.*subscribe|async def.*on_user_created/)
+      })
+
+      it('should support async context manager for subscriptions', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generatePython()
+
+        const subsCode = sdk.files['src/subscriptions.py'] || sdk.files['src/client.py']
+
+        expect(subsCode).toMatch(/__aenter__|__aexit__|async with/)
+      })
+    })
+
+    describe('Go SDK Subscriptions', () => {
+      it('should generate subscription methods with channels', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generateGo()
+
+        const subsCode = sdk.files['subscriptions.go'] || sdk.files['client.go']
+
+        expect(subsCode).toMatch(/chan\s+\*User|<-chan|EventChannel/)
+      })
+
+      it('should support context cancellation for subscriptions', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generateGo()
+
+        const subsCode = sdk.files['subscriptions.go'] || sdk.files['client.go']
+
+        expect(subsCode).toMatch(/context\.Context|ctx\.Done\(\)/)
+      })
+    })
+  })
+
+  // ============================================================================
+  // Auto-Publish to npm/PyPI/Go
+  // ============================================================================
+
+  describe('Auto-Publish to npm/PyPI/Go', () => {
+    describe('npm Publishing (TypeScript)', () => {
+      it('should generate publishable package structure', () => {
+        const generator = createTestGenerator({
+          packageName: '@mycompany/api-sdk',
+          version: '1.0.0',
+        })
+        const sdk = generator.generateTypeScript()
+
+        // Required npm package files
+        expect(sdk.files['package.json']).toBeDefined()
+        expect(sdk.files['README.md']).toBeDefined()
+        expect(sdk.files['tsconfig.json']).toBeDefined()
+        expect(sdk.files['src/index.ts']).toBeDefined()
+
+        const pkg = JSON.parse(sdk.files['package.json'])
+        expect(pkg.name).toBe('@mycompany/api-sdk')
+        expect(pkg.version).toBe('1.0.0')
+        expect(pkg.main).toBeDefined()
+        expect(pkg.types).toBeDefined()
+        expect(pkg.files).toBeDefined()
+      })
+
+      it('should include build scripts in package.json', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generateTypeScript()
+
+        const pkg = JSON.parse(sdk.files['package.json'])
+
+        expect(pkg.scripts).toBeDefined()
+        expect(pkg.scripts.build).toBeDefined()
+        expect(pkg.scripts.prepublishOnly || pkg.scripts.prepare).toBeDefined()
+      })
+
+      it('should generate .npmignore or files field', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generateTypeScript()
+
+        const pkg = JSON.parse(sdk.files['package.json'])
+
+        // Either has files whitelist or .npmignore
+        expect(pkg.files || sdk.files['.npmignore']).toBeDefined()
+      })
+
+      it('should have publish method on SDK generator', async () => {
+        const generator = createTestGenerator({
+          packageName: '@mycompany/api-sdk',
+          version: '1.0.0',
+        })
+
+        // Generator should have publish capability
+        expect(generator.publish).toBeDefined()
+
+        // Dry run publish
+        const result = await generator.publish('npm', {
+          dryRun: true,
+          registry: 'https://registry.npmjs.org',
+        })
+
+        expect(result).toMatchObject({
+          success: true,
+          registry: 'https://registry.npmjs.org',
+          package: '@mycompany/api-sdk',
+          version: '1.0.0',
+        })
+      })
+
+      it('should support custom npm registry', async () => {
+        const generator = createTestGenerator({
+          packageName: '@mycompany/api-sdk',
+          version: '1.0.0',
+        })
+
+        const result = await generator.publish('npm', {
+          dryRun: true,
+          registry: 'https://npm.mycompany.com',
+        })
+
+        expect(result.registry).toBe('https://npm.mycompany.com')
+      })
+
+      it('should generate .npmrc for authentication', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generateTypeScript({
+          publishConfig: {
+            registry: 'https://registry.npmjs.org',
+            access: 'public',
+          },
+        })
+
+        // Either in package.json publishConfig or .npmrc
+        const pkg = JSON.parse(sdk.files['package.json'])
+        expect(pkg.publishConfig || sdk.files['.npmrc']).toBeDefined()
+      })
+    })
+
+    describe('PyPI Publishing (Python)', () => {
+      it('should generate publishable package structure', () => {
+        const generator = createTestGenerator({
+          packageName: 'mycompany-api-sdk',
+          version: '1.0.0',
+        })
+        const sdk = generator.generatePython()
+
+        // Required PyPI package files
+        expect(sdk.files['pyproject.toml']).toBeDefined()
+        expect(sdk.files['README.md']).toBeDefined()
+        expect(sdk.files['src/__init__.py']).toBeDefined()
+
+        expect(sdk.files['pyproject.toml']).toContain('mycompany-api-sdk')
+        expect(sdk.files['pyproject.toml']).toContain('1.0.0')
+      })
+
+      it('should generate pyproject.toml with build system', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generatePython()
+
+        expect(sdk.files['pyproject.toml']).toContain('[build-system]')
+        expect(sdk.files['pyproject.toml']).toMatch(/setuptools|flit|poetry|hatchling/)
+      })
+
+      it('should include package dependencies', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generatePython()
+
+        const pyproject = sdk.files['pyproject.toml']
+
+        // Should have http client dependency
+        expect(pyproject).toMatch(/httpx|aiohttp|requests/)
+      })
+
+      it('should have publish method for PyPI', async () => {
+        const generator = createTestGenerator({
+          packageName: 'mycompany-api-sdk',
+          version: '1.0.0',
+        })
+
+        const result = await generator.publish('pypi', {
+          dryRun: true,
+          repository: 'https://upload.pypi.org/legacy/',
+        })
+
+        expect(result).toMatchObject({
+          success: true,
+          repository: 'https://upload.pypi.org/legacy/',
+          package: 'mycompany-api-sdk',
+          version: '1.0.0',
+        })
+      })
+
+      it('should support TestPyPI for testing', async () => {
+        const generator = createTestGenerator({
+          packageName: 'mycompany-api-sdk',
+          version: '1.0.0',
+        })
+
+        const result = await generator.publish('pypi', {
+          dryRun: true,
+          repository: 'https://test.pypi.org/legacy/',
+        })
+
+        expect(result.repository).toBe('https://test.pypi.org/legacy/')
+      })
+
+      it('should generate MANIFEST.in for source distribution', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generatePython()
+
+        // Either MANIFEST.in or handled by pyproject.toml
+        expect(
+          sdk.files['MANIFEST.in'] ||
+            sdk.files['pyproject.toml'].includes('[tool.setuptools.package-data]')
+        ).toBeTruthy()
+      })
+    })
+
+    describe('Go Modules Publishing', () => {
+      it('should generate publishable module structure', () => {
+        const generator = createTestGenerator({
+          packageName: 'github.com/mycompany/api-sdk',
+          version: '1.0.0',
+        })
+        const sdk = generator.generateGo()
+
+        // Required Go module files
+        expect(sdk.files['go.mod']).toBeDefined()
+        expect(sdk.files['README.md']).toBeDefined()
+
+        expect(sdk.files['go.mod']).toContain('module github.com/mycompany/api-sdk')
+        expect(sdk.files['go.mod']).toMatch(/go 1\.\d+/)
+      })
+
+      it('should include required dependencies in go.mod', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generateGo()
+
+        const goMod = sdk.files['go.mod']
+
+        // Should have require block or no external deps
+        expect(goMod).toMatch(/require|\/\/ No external dependencies/)
+      })
+
+      it('should generate go.sum placeholder', () => {
+        const generator = createTestGenerator()
+        const sdk = generator.generateGo()
+
+        // go.sum might be generated or placeholder
+        expect(sdk.files['go.sum'] !== undefined || sdk.goSumGenerated === false).toBeTruthy()
+      })
+
+      it('should have publish method for Go (git tag)', async () => {
+        const generator = createTestGenerator({
+          packageName: 'github.com/mycompany/api-sdk',
+          version: '1.0.0',
+        })
+
+        const result = await generator.publish('go', {
+          dryRun: true,
+        })
+
+        expect(result).toMatchObject({
+          success: true,
+          module: 'github.com/mycompany/api-sdk',
+          version: 'v1.0.0',
+          tag: 'v1.0.0',
+        })
+      })
+
+      it('should prefix version with v for Go modules', async () => {
+        const generator = createTestGenerator({
+          packageName: 'github.com/mycompany/api-sdk',
+          version: '2.0.0', // Note: no v prefix in config
+        })
+
+        const result = await generator.publish('go', { dryRun: true })
+
+        // Go modules require v prefix
+        expect(result.version).toBe('v2.0.0')
+        expect(result.tag).toBe('v2.0.0')
+      })
+
+      it('should handle major version > 1 with module path suffix', () => {
+        const generator = createTestGenerator({
+          packageName: 'github.com/mycompany/api-sdk',
+          version: '2.0.0',
+        })
+        const sdk = generator.generateGo()
+
+        // Go requires /v2 suffix for major version 2+
+        expect(sdk.files['go.mod']).toContain('module github.com/mycompany/api-sdk/v2')
+      })
+    })
+
+    describe('Auto-Publish on Schema Change', () => {
+      it('should detect when schema has changed', () => {
+        const generator = createTestGenerator()
+
+        // Initial state
+        const hash1 = generator.getSchemaHash()
+
+        // Simulate schema change by creating new generator with different nouns
+        const generator2 = createSDKGenerator({
+          nouns: {
+            User: { name: 'string', email: 'string', role: 'admin | member | guest' },
+            Post: { title: 'string', body: 'string', author: '->User', published: 'boolean' },
+            Comment: { text: 'string', post: '->Post' }, // New noun
+          },
+          verbs: {},
+          packageName: 'test-sdk',
+          version: '1.0.0',
+        })
+
+        const hash2 = generator2.getSchemaHash()
+
+        expect(hash1).not.toBe(hash2)
+      })
+
+      it('should auto-increment version on schema change', () => {
+        const generator = createTestGenerator({ version: '1.0.0' })
+
+        // Simulate adding a field (minor change)
+        const newVersion = generator.getNextVersion('minor')
+        expect(newVersion).toBe('1.1.0')
+
+        // Simulate breaking change (major)
+        const majorVersion = generator.getNextVersion('major')
+        expect(majorVersion).toBe('2.0.0')
+
+        // Patch version
+        const patchVersion = generator.getNextVersion('patch')
+        expect(patchVersion).toBe('1.0.1')
+      })
+
+      it('should generate CHANGELOG from schema diff', () => {
+        const generator = createTestGenerator()
+
+        const changelog = generator.generateChangelog({
+          previousNouns: {
+            User: { name: 'string', email: 'string' },
+          },
+          currentNouns: {
+            User: { name: 'string', email: 'string', role: 'admin | member' }, // Added role
+            Post: { title: 'string' }, // New noun
+          },
+        })
+
+        expect(changelog).toMatch(/Added.*Post|New.*Post/)
+        expect(changelog).toMatch(/Added.*role|New field.*role/)
+      })
+
+      it('should support webhook trigger for auto-publish', () => {
+        const generator = createTestGenerator()
+
+        // Should have method to setup webhook listener
+        expect(generator.setupAutoPublish).toBeDefined()
+
+        const config = generator.setupAutoPublish({
+          onSchemaChange: 'minor',
+          targets: ['npm', 'pypi', 'go'],
+          dryRun: true,
+        })
+
+        expect(config.enabled).toBe(true)
+        expect(config.targets).toContain('npm')
+        expect(config.targets).toContain('pypi')
+        expect(config.targets).toContain('go')
+      })
+    })
+
+    describe('Multi-Target Publishing', () => {
+      it('should publish to all targets at once', async () => {
+        const generator = createTestGenerator({
+          packageName: 'mycompany-sdk',
+          version: '1.0.0',
+        })
+
+        const results = await generator.publishAll({
+          dryRun: true,
+          npm: { registry: 'https://registry.npmjs.org' },
+          pypi: { repository: 'https://upload.pypi.org/legacy/' },
+          go: { module: 'github.com/mycompany/sdk' },
+        })
+
+        expect(results.npm.success).toBe(true)
+        expect(results.pypi.success).toBe(true)
+        expect(results.go.success).toBe(true)
+      })
+
+      it('should continue publishing to other targets if one fails', async () => {
+        const generator = createTestGenerator({
+          packageName: 'mycompany-sdk',
+          version: '1.0.0',
+        })
+
+        const results = await generator.publishAll({
+          dryRun: true,
+          continueOnError: true,
+          npm: { registry: 'https://invalid-registry.example.com' }, // Will fail
+          pypi: { repository: 'https://upload.pypi.org/legacy/' },
+          go: { module: 'github.com/mycompany/sdk' },
+        })
+
+        // npm might fail but others should succeed
+        expect(results.pypi.success).toBe(true)
+        expect(results.go.success).toBe(true)
+      })
+
+      it('should generate publish report', async () => {
+        const generator = createTestGenerator({
+          packageName: 'mycompany-sdk',
+          version: '1.0.0',
+        })
+
+        const results = await generator.publishAll({ dryRun: true })
+
+        expect(results.summary).toBeDefined()
+        expect(results.summary.totalTargets).toBe(3)
+        expect(results.summary.successful).toBeGreaterThanOrEqual(0)
+        expect(results.summary.failed).toBeGreaterThanOrEqual(0)
+      })
+    })
+  })
+
+  // ============================================================================
+  // Error Types Generation
+  // ============================================================================
+
+  describe('Error Types', () => {
+    it('should generate NotFoundError for 404 responses', () => {
+      const generator = createTestGenerator()
+      const sdk = generator.generateTypeScript()
+
+      const errorsCode = sdk.files['src/errors.ts']
+
+      expect(errorsCode).toContain('NotFoundError')
+      expect(errorsCode).toMatch(/404|NOT_FOUND/)
+    })
+
+    it('should generate ValidationError for 400 responses', () => {
+      const generator = createTestGenerator()
+      const sdk = generator.generateTypeScript()
+
+      const errorsCode = sdk.files['src/errors.ts']
+
+      expect(errorsCode).toContain('ValidationError')
+      expect(errorsCode).toMatch(/400|BAD_REQUEST|VALIDATION/)
+    })
+
+    it('should generate AuthenticationError for 401 responses', () => {
+      const generator = createTestGenerator()
+      const sdk = generator.generateTypeScript()
+
+      const errorsCode = sdk.files['src/errors.ts']
+
+      expect(errorsCode).toContain('AuthenticationError')
+      expect(errorsCode).toMatch(/401|UNAUTHORIZED/)
+    })
+
+    it('should generate RateLimitError for 429 responses', () => {
+      const generator = createTestGenerator()
+      const sdk = generator.generateTypeScript()
+
+      const errorsCode = sdk.files['src/errors.ts']
+
+      expect(errorsCode).toContain('RateLimitError')
+      expect(errorsCode).toMatch(/429|RATE_LIMIT|TOO_MANY_REQUESTS/)
+    })
+
+    it('should include retry-after info in RateLimitError', () => {
+      const generator = createTestGenerator()
+      const sdk = generator.generateTypeScript()
+
+      const errorsCode = sdk.files['src/errors.ts']
+
+      expect(errorsCode).toMatch(/retryAfter|retry_after|Retry-After/)
+    })
+
+    it('should generate Python exceptions with proper hierarchy', () => {
+      const generator = createTestGenerator()
+      const sdk = generator.generatePython()
+
+      const errorsCode = sdk.files['src/errors.py']
+
+      expect(errorsCode).toContain('class APIError')
+      expect(errorsCode).toContain('class NotFoundError')
+      expect(errorsCode).toMatch(/\(APIError\)|Exception/)
+    })
+
+    it('should generate Go error types with Error() method', () => {
+      const generator = createTestGenerator()
+      const sdk = generator.generateGo()
+
+      const errorsCode = sdk.files['errors.go']
+
+      expect(errorsCode).toContain('type APIError struct')
+      expect(errorsCode).toMatch(/func \(.*\) Error\(\) string/)
+    })
+
+    it('should include validation error details', () => {
+      const generator = createTestGenerator()
+      const sdk = generator.generateTypeScript()
+
+      const errorsCode = sdk.files['src/errors.ts']
+
+      // Should have field-level error details
+      expect(errorsCode).toMatch(/field|path|errors:\s*.*\[\]/)
+    })
   })
 })

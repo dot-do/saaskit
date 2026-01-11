@@ -96,7 +96,7 @@ function createNounAccessor(noun: string): NounAccessor {
 function createDbProxy(nouns: string[]): Record<string, NounAccessor> {
   const nounSet = new Set(nouns)
 
-  return createCachedProxy<NounAccessor>({
+  const { proxy } = createCachedProxy<NounAccessor>({
     validKeys: nounSet,
     createValue: createNounAccessor,
     onInvalidKey: (prop: string, validKeys: Set<string>) => {
@@ -125,6 +125,8 @@ function createDbProxy(nouns: string[]): Record<string, NounAccessor> {
       )
     },
   })
+
+  return proxy
 }
 
 /**
@@ -197,24 +199,6 @@ function createHumanHandlers() {
   }
 }
 
-/**
- * Find similar integration name for helpful error messages
- */
-function findSimilarIntegration(name: string, registeredNames: string[]): string | null {
-  for (const registered of registeredNames) {
-    // Simple Levenshtein-like check: if only 1-2 chars different
-    if (Math.abs(name.length - registered.length) <= 2) {
-      let diff = 0
-      const longer = name.length >= registered.length ? name : registered
-      const shorter = name.length < registered.length ? name : registered
-      for (let i = 0; i < longer.length; i++) {
-        if (shorter[i] !== longer[i]) diff++
-      }
-      if (diff <= 2) return registered
-    }
-  }
-  return null
-}
 
 /**
  * Create API integration proxy with nested access
@@ -552,7 +536,7 @@ function createApiProxy(
 
       // Not registered - throw helpful error
       const registeredNames = Array.from(integrations.keys())
-      const similar = findSimilarIntegration(prop, registeredNames)
+      const similar = findSimilarKey(prop, registeredNames)
 
       if (similar) {
         throw new Error(`Integration "${prop}" is not registered. Did you mean "${similar}"?`)

@@ -41,6 +41,30 @@ export interface CachedProxyOptions<TValue> {
 }
 
 /**
+ * Result from createCachedProxy including the proxy and cache management
+ *
+ * @typeParam TValue - The type of values in the proxy
+ */
+export interface CachedProxyResult<TValue> {
+  /**
+   * The proxy object that provides lazy value creation
+   */
+  proxy: Record<string, TValue>
+
+  /**
+   * Clear the cache for a specific key or all keys
+   *
+   * @param key - Optional key to clear. If not provided, clears all.
+   */
+  clearCache: (key?: string) => void
+
+  /**
+   * Direct access to the internal cache (for advanced use cases)
+   */
+  cache: Map<string, TValue>
+}
+
+/**
  * Create a proxy that lazily creates and caches values for valid keys
  *
  * This is a common pattern used throughout SaaSkit for:
@@ -53,15 +77,16 @@ export interface CachedProxyOptions<TValue> {
  * - Caching: Once created, values are cached for memory efficiency
  * - Validation: Only valid keys are allowed (configurable)
  * - Enumeration: Supports Object.keys(), 'in' operator, etc.
+ * - Cache management: Clear cache to force re-creation of values
  *
  * @typeParam TValue - The type of values returned by the proxy
  * @param options - Configuration for the proxy behavior
- * @returns A proxy object that lazily creates and caches values
+ * @returns An object with the proxy, clearCache function, and cache access
  *
  * @example
  * ```ts
  * // Create a proxy for database accessors
- * const dbProxy = createCachedProxy<NounAccessor>({
+ * const { proxy: dbProxy, clearCache } = createCachedProxy<NounAccessor>({
  *   validKeys: new Set(['Customer', 'Order', 'Product']),
  *   createValue: (nounName) => createNounAccessor(nounName),
  *   onInvalidKey: (key, validKeys) => {
@@ -74,12 +99,15 @@ export interface CachedProxyOptions<TValue> {
  *
  * // Second access returns cached accessor
  * const sameAccessor = dbProxy.Customer
+ *
+ * // Clear cache when schema changes
+ * clearCache('Customer')
  * ```
  *
  * @example
  * ```ts
  * // With dynamic valid keys (lazy evaluation)
- * const dbProxy = createCachedProxy<NounAccessor>({
+ * const { proxy: dbProxy } = createCachedProxy<NounAccessor>({
  *   validKeys: () => new Set(Object.keys(nounDefinitions)),
  *   createValue: (nounName) => createNounAccessor(nounName),
  * })
@@ -87,7 +115,7 @@ export interface CachedProxyOptions<TValue> {
  */
 export function createCachedProxy<TValue>(
   options: CachedProxyOptions<TValue>
-): Record<string, TValue> {
+): CachedProxyResult<TValue> {
   const { validKeys, createValue, onInvalidKey } = options
   const cache = new Map<string, TValue>()
 
@@ -98,7 +126,7 @@ export function createCachedProxy<TValue>(
     return typeof validKeys === 'function' ? validKeys() : validKeys
   }
 
-  return new Proxy({} as Record<string, TValue>, {
+  const proxy = new Proxy({} as Record<string, TValue>, {
     /**
      * Property getter - returns cached value or creates a new one
      */
@@ -163,6 +191,18 @@ export function createCachedProxy<TValue>(
       }
     },
   })
+
+  return {
+    proxy,
+    clearCache: (key?: string) => {
+      if (key) {
+        cache.delete(key)
+      } else {
+        cache.clear()
+      }
+    },
+    cache,
+  }
 }
 
 /**
