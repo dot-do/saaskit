@@ -16,7 +16,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createContext } from '../core/context'
-import type { Context, ContextConfig } from '../types/context'
+import type { Context, ContextConfig, RunnableAgent } from '../types/context'
 
 describe('$ Context System', () => {
   /**
@@ -175,7 +175,7 @@ describe('$ Context System', () => {
         tools: ['getCustomer'],
       }
 
-      expect($.agents.support.run).toBeInstanceOf(Function)
+      expect(($.agents.support as RunnableAgent).run).toBeInstanceOf(Function)
     })
 
     it('should return promise from agent run', async () => {
@@ -186,7 +186,7 @@ describe('$ Context System', () => {
         tools: [],
       }
 
-      const result = $.agents.support.run({ message: 'Help me' })
+      const result = ($.agents.support as RunnableAgent).run({ message: 'Help me' })
       expect(result).toBeInstanceOf(Promise)
     })
 
@@ -338,14 +338,16 @@ describe('$ Context System', () => {
       const $ = createTestContext()
 
       // e.g., $.api.stripe.charges.create
-      expect($.api.stripe.charges).toBeDefined()
-      expect($.api.stripe.charges.create).toBeInstanceOf(Function)
+      const stripe = $.api.stripe as { charges: { create: Function } }
+      expect(stripe.charges).toBeDefined()
+      expect(stripe.charges.create).toBeInstanceOf(Function)
     })
 
     it('should return promises from API calls', async () => {
       const $ = createTestContext()
 
-      const result = $.api.emails.send({ to: 'test@example.com', subject: 'Hello' })
+      const emails = $.api.emails as { send: (opts: { to: string; subject: string }) => Promise<unknown> }
+      const result = emails.send({ to: 'test@example.com', subject: 'Hello' })
       expect(result).toBeInstanceOf(Promise)
     })
   })
@@ -431,9 +433,9 @@ describe('$ Context System', () => {
       const user = { id: 'usr_123', email: 'admin@example.com', role: 'admin' }
       const $ = createTestContext({ user })
 
-      expect($.user.id).toBe('usr_123')
-      expect($.user.email).toBe('admin@example.com')
-      expect($.user.role).toBe('admin')
+      expect($.user!.id).toBe('usr_123')
+      expect($.user!.email).toBe('admin@example.com')
+      expect($.user!.role).toBe('admin')
     })
 
     it('should be undefined for unauthenticated contexts', () => {
@@ -455,9 +457,9 @@ describe('$ Context System', () => {
       const org = { id: 'org_123', name: 'Acme Corp', plan: 'enterprise' }
       const $ = createTestContext({ org })
 
-      expect($.org.id).toBe('org_123')
-      expect($.org.name).toBe('Acme Corp')
-      expect($.org.plan).toBe('enterprise')
+      expect($.org!.id).toBe('org_123')
+      expect($.org!.name).toBe('Acme Corp')
+      expect($.org!.plan).toBe('enterprise')
     })
 
     it('should be undefined for org-less contexts', () => {
@@ -631,15 +633,17 @@ describe('$ Context System', () => {
     it('should support day schedules', () => {
       const $ = createTestContext()
 
-      expect($.every.day).toBeDefined()
-      expect($.every.day.at).toBeInstanceOf(Function)
+      const day = $.every.day as { at: Function; at6am: Function }
+      expect(day).toBeDefined()
+      expect(day.at).toBeInstanceOf(Function)
     })
 
     it('should support time specification', () => {
       const $ = createTestContext()
       const handler = vi.fn()
 
-      const schedule = $.every.day.at('9am')
+      const day = $.every.day as { at: (time: string) => unknown }
+      const schedule = day.at('9am')
       expect(schedule).toBeDefined()
     })
 
@@ -647,7 +651,8 @@ describe('$ Context System', () => {
       const $ = createTestContext()
 
       // From README: $.every.day.at6am
-      expect($.every.day.at6am).toBeInstanceOf(Function)
+      const day = $.every.day as { at6am: Function }
+      expect(day.at6am).toBeInstanceOf(Function)
     })
 
     it('should support named day schedules', () => {
@@ -666,7 +671,8 @@ describe('$ Context System', () => {
       const $ = createTestContext()
 
       // From README: $.every.Monday.at9am
-      expect($.every.Monday.at9am).toBeInstanceOf(Function)
+      const Monday = $.every.Monday as { at9am: Function }
+      expect(Monday.at9am).toBeInstanceOf(Function)
     })
 
     it('should support hour and minute schedules', () => {
@@ -689,14 +695,14 @@ describe('$ Context System', () => {
 
       // Typical verb handler would:
       // 1. Access record and input
-      expect($.record.total).toBe(100)
+      expect($.record!.total).toBe(100)
       expect($.input.status).toBe('paid')
 
       // 2. Make database updates
       expect($.db.Order.update).toBeInstanceOf(Function)
 
       // 3. Call external APIs
-      expect($.api.stripe.charges.create).toBeInstanceOf(Function)
+      expect(($.api.stripe as { charges: { create: Function } }).charges.create).toBeInstanceOf(Function)
 
       // 4. Send events
       expect($.send).toBeInstanceOf(Function)
@@ -715,7 +721,7 @@ describe('$ Context System', () => {
       $.integrate('slack', { webhook: 'https://hooks.slack.com/services/xxx' })
 
       // And can use full context
-      expect($.api.slack.send).toBeInstanceOf(Function)
+      expect(($.api.slack as { send: Function }).send).toBeInstanceOf(Function)
       expect($.db.Order.get).toBeInstanceOf(Function)
     })
 
@@ -725,12 +731,13 @@ describe('$ Context System', () => {
       })
 
       // Scheduled tasks use $.every for registration
-      const schedule = $.every.day.at('9am')
+      const day = $.every.day as { at: (time: string) => unknown }
+      const schedule = day.at('9am')
       expect(schedule).toBeDefined()
 
       // And have access to full context
       expect($.db.Order.find).toBeInstanceOf(Function)
-      expect($.api.emails.send).toBeInstanceOf(Function)
+      expect(($.api.emails as { send: Function }).send).toBeInstanceOf(Function)
       expect($.time.daysAgo).toBeInstanceOf(Function)
     })
   })
@@ -752,7 +759,7 @@ describe('$ Context System', () => {
       }
 
       const $ = createTestContext({
-        input: { name: 'John', email: 'john@test.com' } as CreateCustomerInput,
+        input: { name: 'John', email: 'john@test.com' } as unknown as Record<string, unknown>,
       })
 
       expect($.input.name).toBe('John')
@@ -768,11 +775,11 @@ describe('$ Context System', () => {
       }
 
       const $ = createTestContext({
-        record: { id: 'cus_1', name: 'John', email: 'john@test.com', plan: 'pro' } as CustomerRecord,
+        record: { id: 'cus_1', name: 'John', email: 'john@test.com', plan: 'pro' } as unknown as Record<string, unknown>,
       })
 
-      expect($.record.id).toBe('cus_1')
-      expect($.record.plan).toBe('pro')
+      expect($.record!.id).toBe('cus_1')
+      expect($.record!.plan).toBe('pro')
     })
   })
 })

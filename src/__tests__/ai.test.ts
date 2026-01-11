@@ -618,7 +618,7 @@ describe('AI + Human Integration', () => {
     })
 
     it('should support AI with human approval gate', async () => {
-      const action = await $.ai.json`Determine if refund is appropriate for complaint: "broken item"`
+      const action = await $.ai.json`Determine if refund is appropriate for complaint: "broken item"` as { shouldRefund?: boolean; amount?: number }
 
       if (action.shouldRefund) {
         const approved = await $.human.approve(`Approve AI-recommended refund of $${action.amount}?`)

@@ -16,9 +16,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 
 // These imports will fail until implementation exists
-// @ts-expect-error - Implementation not yet created
 import { createSaaS } from '../database'
-// @ts-expect-error - Implementation not yet created
 import type { NounDefinitions, DatabaseAccessor, DBPromise } from '../database/types'
 
 describe('Database Layer', () => {
@@ -743,7 +741,7 @@ describe('Database Layer', () => {
         Customer: { name: 'string' },
       })
 
-      // @ts-expect-error - Intentionally accessing undefined noun
+      // This should throw at runtime because Product is not defined
       expect(() => $.db.Product).toThrow(/not.*defined|unknown.*noun/i)
     })
   })

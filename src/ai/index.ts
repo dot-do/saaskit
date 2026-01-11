@@ -173,7 +173,7 @@ function createStreamResult(chunks: string[]): StreamResult {
 // AI Template Literal Factory
 // ============================================================================
 
-interface AITemplateLiteral {
+export interface AITemplateLiteral {
   (strings: TemplateStringsArray, ...values: unknown[]): AIPromise
   with: (options: AIOptions) => AITemplateLiteral
   stream: (strings: TemplateStringsArray, ...values: unknown[]) => StreamResult

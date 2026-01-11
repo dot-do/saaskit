@@ -185,8 +185,8 @@ describe('SaaS Component - Children Function API', () => {
             $.nouns({ Todo: { title: 'string', done: 'boolean' } })
             $.verbs({
               Todo: {
-                create: $ => $.db.Todo.create($.input),
-                complete: $ => $.db.Todo.update($.id, { done: true }),
+                create: ($: any) => $.db.Todo.create($.input),
+                complete: ($: any) => $.db.Todo.update($.id, { done: true }),
               },
             })
             registeredVerbs = $._registeredVerbs
@@ -209,8 +209,8 @@ describe('SaaS Component - Children Function API', () => {
             $.nouns({ Order: { total: 'number' } })
             $.verbs({
               Order: {
-                pay: $ => $.db.Order.update($.id, { status: 'paid' }),
-                ship: $ => $.db.Order.update($.id, { status: 'shipped' }),
+                pay: ($: any) => $.db.Order.update($.id, { status: 'paid' }),
+                ship: ($: any) => $.db.Order.update($.id, { status: 'shipped' }),
               },
             })
             verbAnatomy = $._verbAnatomy
@@ -430,7 +430,7 @@ describe('SaaS Function Export', () => {
         })
         $.verbs({
           Todo: {
-            complete: $ => $.db.Todo.update($.id, { done: true }),
+            complete: ($: any) => $.db.Todo.update($.id, { done: true }),
           },
         })
       },

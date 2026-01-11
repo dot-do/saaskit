@@ -62,7 +62,7 @@ export function createListPage(
     )
 
     // Table header
-    const headerCells = noun.fields
+    const headerCells: ReactNode[] = noun.fields
       .filter((f) => f.type !== 'relation' || f.cardinality === 'one')
       .map((field) =>
         createElement(

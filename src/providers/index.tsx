@@ -241,6 +241,14 @@ function createStubAppContext(): AppContext {
       },
     },
     every: {} as never, // Schedule builder not needed at runtime
+    api: {}, // Integration API access stub
+    send(event, payload) {
+      console.log(`[send] ${event}`, payload)
+    },
+    async do(action, payload) {
+      console.log(`[do] ${action}`, payload)
+      return {}
+    },
   }
 }
 

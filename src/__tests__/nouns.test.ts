@@ -25,9 +25,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 
 // These imports will fail until implementation exists
-// @ts-expect-error - Implementation not yet created
 import { createSaaS, withBuiltIns } from '../core'
-// @ts-expect-error - Implementation not yet created
 import type { BuiltInNouns } from '../core/built-ins'
 
 describe('Built-in SaaS Nouns', () => {
@@ -491,9 +489,9 @@ describe('Built-in SaaS Nouns', () => {
         expect(apiKey).toHaveProperty('id')
         expect(apiKey).toHaveProperty('key')
         // Key should be prefixed (e.g., sk_live_ or api_)
-        expect(apiKey.key).toMatch(/^(sk_|api_|key_)/)
+        expect((apiKey.key as string)).toMatch(/^(sk_|api_|key_)/)
         // Key should be sufficiently long
-        expect(apiKey.key.length).toBeGreaterThan(20)
+        expect((apiKey.key as string).length).toBeGreaterThan(20)
       })
 
       it('should hash the API key before storage', async () => {
@@ -530,7 +528,7 @@ describe('Built-in SaaS Nouns', () => {
           isActive: true,
         })
 
-        const originalKey = apiKey.key
+        const originalKey = apiKey.key as string
 
         // Validate the key
         const validationResult = await $.auth.validateAPIKey(originalKey)
@@ -564,7 +562,7 @@ describe('Built-in SaaS Nouns', () => {
           expiresAt: new Date(Date.now() - 86400000), // Expired yesterday
         })
 
-        const validationResult = await $.auth.validateAPIKey(apiKey.key)
+        const validationResult = await $.auth.validateAPIKey(apiKey.key as string)
 
         expect(validationResult).toMatchObject({
           valid: false,
@@ -584,7 +582,7 @@ describe('Built-in SaaS Nouns', () => {
           isActive: false,
         })
 
-        const validationResult = await $.auth.validateAPIKey(apiKey.key)
+        const validationResult = await $.auth.validateAPIKey(apiKey.key as string)
 
         expect(validationResult).toMatchObject({
           valid: false,
@@ -605,13 +603,13 @@ describe('Built-in SaaS Nouns', () => {
         })
 
         const before = new Date()
-        await $.auth.validateAPIKey(apiKey.key)
+        await $.auth.validateAPIKey(apiKey.key as string)
         const after = new Date()
 
-        const updated = await $.db.APIKey.get(apiKey.id)
+        const updated = await $.db.APIKey.get(apiKey.id as string)
         expect(updated?.lastUsedAt).toBeDefined()
-        expect(new Date(updated?.lastUsedAt).getTime()).toBeGreaterThanOrEqual(before.getTime())
-        expect(new Date(updated?.lastUsedAt).getTime()).toBeLessThanOrEqual(after.getTime())
+        expect(new Date(updated?.lastUsedAt as string | number | Date).getTime()).toBeGreaterThanOrEqual(before.getTime())
+        expect(new Date(updated?.lastUsedAt as string | number | Date).getTime()).toBeLessThanOrEqual(after.getTime())
       })
     })
   })
@@ -697,7 +695,7 @@ describe('Built-in SaaS Nouns', () => {
         expect(webhook.url).toBe('https://example.com/webhook')
         expect(webhook.secret).toBeDefined()
         // Secret should be sufficiently long for HMAC signing
-        expect(webhook.secret.length).toBeGreaterThan(20)
+        expect((webhook.secret as string).length).toBeGreaterThan(20)
       })
 
       it('should validate URL format', async () => {
@@ -1087,7 +1085,7 @@ describe('Built-in SaaS Nouns', () => {
         const loadedOrg = await $.db.Organization.get(org.id, { include: ['members'] })
 
         expect(loadedOrg?.members).toHaveLength(2)
-        expect(loadedOrg?.members.map((u: { email: string }) => u.email)).toContain('user1@example.com')
+        expect((loadedOrg?.members as Array<{ email: string }>).map((u) => u.email)).toContain('user1@example.com')
       })
     })
 
@@ -1246,7 +1244,9 @@ describe('Built-in SaaS Nouns', () => {
     it('should emit Organization.upgraded event on plan change', async () => {
       const eventLog: string[] = []
 
-      $.on.Organization.upgraded(async (org, { previousPlan, newPlan }) => {
+      $.on.Organization.upgraded(async (org: unknown, context?: Record<string, unknown>) => {
+        const previousPlan = context?.previousPlan as string
+        const newPlan = context?.newPlan as string
         eventLog.push(`upgraded:${previousPlan}:${newPlan}`)
       })
 

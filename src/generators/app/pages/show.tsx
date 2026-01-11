@@ -95,8 +95,10 @@ export function createShowPage(
                     const displayValue = field.name === 'orders' && typeof item.total === 'number'
                       ? `$${item.total}`
                       : item.name || item.id
+                    // Ensure key is always a string or number
+                    const itemKey = typeof item.id === 'string' || typeof item.id === 'number' ? item.id : idx
 
-                    return createElement('li', { key: item.id || idx }, displayValue)
+                    return createElement('li', { key: itemKey }, String(displayValue ?? ''))
                   })
                 ),
               ])

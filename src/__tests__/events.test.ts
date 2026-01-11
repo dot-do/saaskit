@@ -10,6 +10,29 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createEventBuilder, createWorkflowPrimitives } from '../events'
 import type { AppContext, EventPayload } from '../types'
 
+// Type helper for schedule builder
+type EventHandlerFn<T> = (record: T, $: AppContext) => Promise<void>
+type ScheduleHandlerFn = ($: AppContext) => Promise<void>
+type ScheduleMap = Map<string, { cron: string; handler: ScheduleHandlerFn }>
+
+// Extended schedule builder type for tests
+interface TestScheduleBuilder {
+  day: {
+    at6am: (handler: ScheduleHandlerFn) => void
+    at9am: (handler: ScheduleHandlerFn) => void
+    at3am: (handler: ScheduleHandlerFn) => void
+  }
+  hour: (handler: ScheduleHandlerFn) => void
+  minute: (handler: ScheduleHandlerFn) => void
+  Monday: { at6am: (handler: ScheduleHandlerFn) => void; at9am: (handler: ScheduleHandlerFn) => void; at3am: (handler: ScheduleHandlerFn) => void }
+  Tuesday: { at6am: (handler: ScheduleHandlerFn) => void; at9am: (handler: ScheduleHandlerFn) => void; at3am: (handler: ScheduleHandlerFn) => void }
+  Wednesday: { at6am: (handler: ScheduleHandlerFn) => void; at9am: (handler: ScheduleHandlerFn) => void; at3am: (handler: ScheduleHandlerFn) => void }
+  Thursday: { at6am: (handler: ScheduleHandlerFn) => void; at9am: (handler: ScheduleHandlerFn) => void; at3am: (handler: ScheduleHandlerFn) => void }
+  Friday: { at6am: (handler: ScheduleHandlerFn) => void; at9am: (handler: ScheduleHandlerFn) => void; at3am: (handler: ScheduleHandlerFn) => void }
+  Saturday: { at6am: (handler: ScheduleHandlerFn) => void; at9am: (handler: ScheduleHandlerFn) => void; at3am: (handler: ScheduleHandlerFn) => void }
+  Sunday: { at6am: (handler: ScheduleHandlerFn) => void; at9am: (handler: ScheduleHandlerFn) => void; at3am: (handler: ScheduleHandlerFn) => void }
+}
+
 describe('Events & Schedules', () => {
   describe('$.on.[Noun].[event]() - Event Handler Registration', () => {
     let $on: ReturnType<typeof createEventBuilder>
@@ -139,7 +162,7 @@ describe('Events & Schedules', () => {
 
     it('handler has access to $.api.slack', async () => {
       $on.Order.created(async (order, $) => {
-        await $.api.slack.send('#sales', `New order: $${(order as { total: number }).total}`)
+        await ($.api.slack as { send: (channel: string, msg: string) => Promise<void> }).send('#sales', `New order: $${(order as { total: number }).total}`)
       })
 
       const order = { id: '123', total: 99.99 }
@@ -151,7 +174,7 @@ describe('Events & Schedules', () => {
 
     it('handler has access to $.api.emails', async () => {
       $on.Match.hired(async (match, $) => {
-        await $.api.emails.send({
+        await ($.api.emails as { send: (opts: { to: string; subject: string }) => Promise<void> }).send({
           to: (match as { candidate: { email: string } }).candidate.email,
           subject: 'Offer Letter',
         })
@@ -187,13 +210,13 @@ describe('Events & Schedules', () => {
   })
 
   describe('$.every.[interval].at[time]() - Schedule Registration', () => {
-    let $every: ReturnType<typeof createEventBuilder>['_scheduleBuilder']
-    let registeredSchedules: Map<string, { cron: string; handler: () => Promise<void> }>
+    let $every: TestScheduleBuilder
+    let registeredSchedules: ScheduleMap
 
     beforeEach(() => {
       registeredSchedules = new Map()
       // We need to create a schedule builder that registers to our map
-      $every = createScheduleRegistrar(registeredSchedules)
+      $every = createScheduleRegistrar(registeredSchedules) as TestScheduleBuilder
     })
 
     it('$.every.day.at6am() registers a daily schedule at 6am', () => {
@@ -269,13 +292,13 @@ describe('Events & Schedules', () => {
       } as unknown as AppContext
 
       let receivedContext: AppContext | null = null
-      $every.day.at6am(async ($) => {
+      $every.day.at6am(async ($: AppContext) => {
         receivedContext = $
-        await $.db.Order.find({ status: 'pending' })
+        await ($.db as any).Order.find({ status: 'pending' })
       })
 
       const schedule = registeredSchedules.get('day.at6am')
-      await schedule?.handler.call(null, mockContext)
+      await schedule?.handler(mockContext)
 
       expect(receivedContext).toBe(mockContext)
     })
@@ -501,7 +524,7 @@ describe('Events & Schedules', () => {
 
     it('scheduled task can use workflow primitives', async () => {
       const registeredSchedules = new Map<string, { cron: string; handler: (ctx: AppContext) => Promise<void> }>()
-      const $every = createScheduleRegistrar(registeredSchedules)
+      const $every = createScheduleRegistrar(registeredSchedules) as TestScheduleBuilder
 
       const contextWithWorkflows = {
         send: workflows.send,
@@ -509,8 +532,8 @@ describe('Events & Schedules', () => {
         db: { Metric: { sum: vi.fn().mockResolvedValue(10000) } },
       } as unknown as AppContext
 
-      $every.Monday.at9am(async ($) => {
-        const revenue = await $.db.Metric.sum('revenue', { period: 'week' })
+      $every.Monday.at9am(async ($: AppContext) => {
+        const revenue = await ($.db as any).Metric.sum('revenue', { period: 'week' })
         $.send('Slack.message', {
           channel: '#metrics',
           message: `Weekly revenue: $${revenue}`,

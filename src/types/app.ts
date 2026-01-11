@@ -37,10 +37,102 @@ import type { SchedulesConfig } from './schedules'
  * })
  * ```
  */
+/**
+ * Plan configuration for pricing
+ */
+export interface PlanConfig {
+  /** Price in dollars (0 for free) */
+  price: number
+  /** Features included in this plan */
+  features: string[]
+  /** Whether this plan is recommended/highlighted */
+  recommended?: boolean
+}
+
+/**
+ * StoryBrand context for AI copy generation
+ */
+export interface StoryBrandContext {
+  /** Target audience/customer hero */
+  hero?: string
+  /** Target audience description */
+  targetAudience?: string
+  /** The problem/villain they face */
+  villain?: string
+  /** The problem statement */
+  problem?: string
+  /** Your product as the guide */
+  guide?: string
+  /** The solution your product provides */
+  solution?: string
+  /** The plan to solve their problem */
+  plan?: string
+  /** What unique value you provide */
+  uniqueValue?: string
+  /** What success looks like */
+  successOutcome?: string
+  /** What failure looks like (stakes) */
+  failureOutcome?: string
+  /** Tone of voice for copy */
+  tone?: 'professional' | 'casual' | 'friendly' | 'authoritative'
+}
+
+/**
+ * Site customization options
+ */
+export interface SiteCustomization {
+  /** Hero section overrides */
+  hero?: {
+    secondaryCTA?: {
+      text: string
+      href: string
+    }
+  }
+  /** Features section overrides */
+  features?: {
+    items?: Array<{ title: string; description: string }>
+  }
+  /** CTA section overrides */
+  cta?: {
+    headline?: string
+    subheadline?: string
+    button?: {
+      text: string
+      href: string
+    }
+  }
+  /** Footer section overrides */
+  footer?: {
+    social?: {
+      twitter?: string
+      github?: string
+      linkedin?: string
+    }
+  }
+  /** Meta tag overrides */
+  meta?: {
+    keywords?: string
+    author?: string
+    robots?: string
+  }
+}
+
 export interface AppConfig<
   Nouns extends readonly string[] = readonly string[],
   Verbs extends VerbsConfig<Nouns[number]> = VerbsConfig<Nouns[number]>,
 > {
+  /**
+   * Application name
+   * @example 'TaskFlow'
+   */
+  name?: string
+
+  /**
+   * Application description
+   * @example 'The easiest way to manage your tasks'
+   */
+  description?: string
+
   /**
    * The dotdo endpoint URL
    * @example 'https://api.your-app.do'
@@ -52,6 +144,12 @@ export interface AppConfig<
    * @example 'tenant-123'
    */
   ns?: string
+
+  /**
+   * Domain name for the app
+   * @example 'taskflow.io'
+   */
+  domain?: string
 
   /**
    * Domain entities (PascalCase)
@@ -79,6 +177,21 @@ export interface AppConfig<
    * Scheduled tasks (PascalCase names)
    */
   schedules?: SchedulesConfig
+
+  /**
+   * Pricing plans configuration
+   */
+  plans?: Record<string, PlanConfig>
+
+  /**
+   * Site customization options for landing page generation
+   */
+  site?: SiteCustomization
+
+  /**
+   * StoryBrand context for AI-powered copy generation
+   */
+  context?: StoryBrandContext
 }
 
 /**

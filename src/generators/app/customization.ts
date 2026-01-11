@@ -210,7 +210,8 @@ export interface ComponentOverrides {
   /** Custom shell/layout component */
   Shell?: ComponentType<{ children: ReactNode }>
   /** Noun-specific overrides using `PageType:NounName` format */
-  [key: string]: ComponentType<unknown> | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: ComponentType<any> | undefined
 }
 
 // =============================================================================

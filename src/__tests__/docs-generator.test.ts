@@ -33,9 +33,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 
 // These imports will fail until implementation exists
-// @ts-expect-error - Implementation not yet created
 import { generateDocs, DocsGenerator } from '../docs'
-// @ts-expect-error - Implementation not yet created
 import type {
   DocsConfig,
   DocsPage,
@@ -44,7 +42,6 @@ import type {
   WebhookEvent,
   SDKQuickstart,
 } from '../docs/types'
-// @ts-expect-error - Implementation not yet created
 import { createSaaS } from '../database'
 
 describe('Docs Generator', () => {
@@ -330,11 +327,11 @@ describe('Docs Generator', () => {
       expect(customerRef?.schema).toBeDefined()
 
       // Should document field types
-      expect(customerRef?.schema.name).toEqual({ type: 'string', required: true })
-      expect(customerRef?.schema.email).toEqual({ type: 'string', required: true })
+      expect(customerRef!.schema!.name).toEqual({ type: 'string', required: true })
+      expect(customerRef!.schema!.email).toEqual({ type: 'string', required: true })
 
       // Should document relationships
-      expect(customerRef?.schema.plan).toMatchObject({
+      expect(customerRef!.schema!.plan).toMatchObject({
         type: 'relation',
         target: 'Plan',
       })
@@ -347,7 +344,7 @@ describe('Docs Generator', () => {
         p.slug?.includes('order') || p.title?.includes('Order')
       )
 
-      expect(orderRef?.schema.status).toMatchObject({
+      expect(orderRef!.schema!.status).toMatchObject({
         type: 'enum',
         values: ['pending', 'paid', 'shipped'],
       })
@@ -461,8 +458,8 @@ describe('Docs Generator', () => {
 
       expect(createEndpoint?.parameters).toBeDefined()
 
-      const nameParam = createEndpoint?.parameters.find((p: any) => p.name === 'name')
-      const descParam = createEndpoint?.parameters.find((p: any) => p.name === 'description')
+      const nameParam = createEndpoint!.parameters!.find((p: any) => p.name === 'name')
+      const descParam = createEndpoint!.parameters!.find((p: any) => p.name === 'description')
 
       expect(nameParam?.required).toBe(true)
       expect(descParam?.required).toBe(false) // description is markdown?
@@ -878,9 +875,9 @@ describe('Docs Generator', () => {
       )
 
       // Schema documentation should show enum values
-      expect(userRef?.schema.role.values).toContain('admin')
-      expect(userRef?.schema.role.values).toContain('member')
-      expect(userRef?.schema.role.values).toContain('guest')
+      expect(userRef!.schema!.role.values).toContain('admin')
+      expect(userRef!.schema!.role.values).toContain('member')
+      expect(userRef!.schema!.role.values).toContain('guest')
     })
   })
 
@@ -969,7 +966,7 @@ describe('Docs Generator', () => {
         p.slug?.includes('task') || p.title?.includes('Task')
       )
 
-      expect(taskRef1?.schema.priority).toBeUndefined()
+      expect(taskRef1!.schema!.priority).toBeUndefined()
 
       // Update noun with new field
       $.updateNoun('Task', {
@@ -982,8 +979,8 @@ describe('Docs Generator', () => {
         p.slug?.includes('task') || p.title?.includes('Task')
       )
 
-      expect(taskRef2?.schema.priority).toBeDefined()
-      expect(taskRef2?.schema.priority.values).toContain('high')
+      expect(taskRef2!.schema!.priority).toBeDefined()
+      expect(taskRef2!.schema!.priority.values).toContain('high')
     })
 
     it('should regenerate examples when schema changes', () => {
@@ -1068,8 +1065,8 @@ describe('Docs Generator', () => {
 
       // Should have frontmatter
       expect(widgetRef?.frontmatter).toBeDefined()
-      expect(widgetRef?.frontmatter.title).toBeDefined()
-      expect(widgetRef?.frontmatter.description).toBeDefined()
+      expect(widgetRef!.frontmatter!.title).toBeDefined()
+      expect(widgetRef!.frontmatter!.description).toBeDefined()
     })
 
     it('should generate correct navigation structure', () => {

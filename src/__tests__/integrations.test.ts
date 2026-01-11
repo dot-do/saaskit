@@ -8,6 +8,23 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { createContext } from '../core'
 import type { IntegrationConfigOptions, ApiProxy } from '../types'
 
+// Helper to cast $.api.* to typed APIs
+type ApiService<T> = T
+const emails = <T>(api: unknown) => api as ApiService<{ send: (opts: T) => Promise<unknown> }>
+const texts = <T>(api: unknown) => api as ApiService<{ send: (opts: T) => Promise<unknown> }>
+const calls = <T>(api: unknown) => api as ApiService<{ initiate: (opts: T) => Promise<unknown> }>
+const slack = (api: unknown) => api as ApiService<{ send: (...args: unknown[]) => Promise<unknown> }>
+const stripe = (api: unknown) => api as ApiService<{
+  charges: { create: (opts: unknown) => Promise<unknown> }
+  customers: {
+    retrieve: (id: string) => Promise<unknown>
+    subscriptions: { list: (opts: unknown) => Promise<unknown> }
+  }
+}>
+const apollo = (api: unknown) => api as ApiService<{ people: { enrich: (opts: unknown) => Promise<unknown> } }>
+const hubspot = (api: unknown) => api as ApiService<{ contacts: { create: (opts: unknown) => Promise<unknown> } }>
+const salesforce = (api: unknown) => api as ApiService<{ objects: { create: (opts: unknown) => Promise<unknown> }; query: (q: string) => Promise<unknown> }>
+
 describe('Integrations Layer', () => {
   describe('$.integrate() - Integration Registration', () => {
     it('registers an integration with API key config', () => {
@@ -171,7 +188,7 @@ describe('Integrations Layer', () => {
       })
       $.setFetch(mockFetch)
 
-      const result = await $.api.emails.send({
+      const result = await emails($.api.emails).send({
         to: 'user@example.com',
         subject: 'Hello',
         body: 'Test email body',
@@ -200,7 +217,7 @@ describe('Integrations Layer', () => {
       })
       $.setFetch(mockFetch)
 
-      await $.api.emails.send({
+      await emails($.api.emails).send({
         to: ['user1@example.com', 'user2@example.com'],
         subject: 'Hello',
         body: 'Test email body',
@@ -222,7 +239,7 @@ describe('Integrations Layer', () => {
       })
       $.setFetch(mockFetch)
 
-      await $.api.emails.send({
+      await emails($.api.emails).send({
         to: 'user@example.com',
         template: 'welcome',
         data: { name: 'John' },
@@ -251,7 +268,7 @@ describe('Integrations Layer', () => {
       })
       $.setFetch(mockFetch)
 
-      const result = await $.api.texts.send({
+      const result = await texts($.api.texts).send({
         to: '+1234567890',
         message: 'Hello from SaaSkit',
       })
@@ -285,7 +302,7 @@ describe('Integrations Layer', () => {
       })
       $.setFetch(mockFetch)
 
-      const result = await $.api.calls.initiate({
+      const result = await calls($.api.calls).initiate({
         to: '+1234567890',
         from: '+0987654321',
         script: 'greeting',
@@ -311,7 +328,7 @@ describe('Integrations Layer', () => {
     it('requires registration before use', () => {
       const $ = createContext()
 
-      expect(() => $.api.slack.send('#general', 'Hello')).toThrow(
+      expect(() => slack($.api.slack).send('#general', 'Hello')).toThrow(
         'Integration "slack" is not registered'
       )
     })
@@ -327,7 +344,7 @@ describe('Integrations Layer', () => {
       })
       $.setFetch(mockFetch)
 
-      await $.api.slack.send('#general', 'Hello from SaaSkit')
+      await slack($.api.slack).send('#general', 'Hello from SaaSkit')
 
       expect(mockFetch).toHaveBeenCalledWith(webhookUrl, {
         method: 'POST',
@@ -349,7 +366,7 @@ describe('Integrations Layer', () => {
       })
       $.setFetch(mockFetch)
 
-      await $.api.slack.send('#general', 'Hello', {
+      await slack($.api.slack).send('#general', 'Hello', {
         blocks: [{ type: 'section', text: { type: 'mrkdwn', text: '*Bold*' } }],
       })
 
@@ -368,7 +385,7 @@ describe('Integrations Layer', () => {
       expect($.api.stripe).toBeDefined()
     })
 
-    it('supports nested method calls ($.api.stripe.charges.create)', async () => {
+    it('supports nested method calls (stripe($.api.stripe).charges.create)', async () => {
       const $ = createContext()
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -376,7 +393,7 @@ describe('Integrations Layer', () => {
       })
       $.setFetch(mockFetch)
 
-      const result = await $.api.stripe.charges.create({
+      const result = await stripe($.api.stripe).charges.create({
         amount: 1000,
         currency: 'usd',
         customer: 'cus_123',
@@ -397,7 +414,7 @@ describe('Integrations Layer', () => {
       expect(result).toEqual({ id: 'ch_123', amount: 1000 })
     })
 
-    it('supports deeply nested method calls ($.api.stripe.customers.subscriptions.list)', async () => {
+    it('supports deeply nested method calls (stripe($.api.stripe).customers.subscriptions.list)', async () => {
       const $ = createContext()
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -405,7 +422,7 @@ describe('Integrations Layer', () => {
       })
       $.setFetch(mockFetch)
 
-      const result = await $.api.stripe.customers.subscriptions.list({
+      const result = await stripe($.api.stripe).customers.subscriptions.list({
         customer: 'cus_123',
       })
 
@@ -415,7 +432,7 @@ describe('Integrations Layer', () => {
           method: 'POST',
         })
       )
-      expect(result.data).toHaveLength(1)
+      expect((result as { data: unknown[] }).data).toHaveLength(1)
     })
 
     it('maps retrieve methods correctly', async () => {
@@ -426,7 +443,7 @@ describe('Integrations Layer', () => {
       })
       $.setFetch(mockFetch)
 
-      const result = await $.api.stripe.customers.retrieve('cus_123')
+      const result = await stripe($.api.stripe).customers.retrieve('cus_123')
 
       expect(mockFetch).toHaveBeenCalledWith(
         'https://payments.do/api/stripe/customers/retrieve',
@@ -434,7 +451,7 @@ describe('Integrations Layer', () => {
           body: JSON.stringify({ id: 'cus_123' }),
         })
       )
-      expect(result.id).toBe('cus_123')
+      expect((result as { id: string }).id).toBe('cus_123')
     })
   })
 
@@ -442,7 +459,7 @@ describe('Integrations Layer', () => {
     it('requires registration before use', () => {
       const $ = createContext()
 
-      expect(() => $.api.apollo.people.enrich({ email: 'test@example.com' })).toThrow(
+      expect(() => apollo($.api.apollo).people.enrich({ email: 'test@example.com' })).toThrow(
         'Integration "apollo" is not registered'
       )
     })
@@ -460,7 +477,7 @@ describe('Integrations Layer', () => {
       })
       $.setFetch(mockFetch)
 
-      const result = await $.api.apollo.people.enrich({
+      const result = await apollo($.api.apollo).people.enrich({
         email: 'john@example.com',
       })
 
@@ -473,7 +490,7 @@ describe('Integrations Layer', () => {
         },
         body: JSON.stringify({ email: 'john@example.com' }),
       })
-      expect(result.person.name).toBe('John Doe')
+      expect((result as { person: { name: string } }).person.name).toBe('John Doe')
     })
   })
 
@@ -488,7 +505,7 @@ describe('Integrations Layer', () => {
       })
       $.setFetch(mockFetch)
 
-      const result = await $.api.hubspot.contacts.create({
+      const result = await hubspot($.api.hubspot).contacts.create({
         email: 'john@example.com',
         firstname: 'John',
         lastname: 'Doe',
@@ -501,7 +518,7 @@ describe('Integrations Layer', () => {
         }),
         body: expect.any(String),
       })
-      expect(result.id).toBe('contact-123')
+      expect((result as { id: string }).id).toBe('contact-123')
     })
   })
 
@@ -517,7 +534,7 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       await expect(
-        $.api.emails.send({ to: 'test@example.com', subject: 'Test', body: 'Test' })
+        emails($.api.emails).send({ to: 'test@example.com', subject: 'Test', body: 'Test' })
       ).rejects.toThrow('Emails.do API error (401): Invalid API key')
     })
 
@@ -527,7 +544,7 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       await expect(
-        $.api.emails.send({ to: 'test@example.com', subject: 'Test', body: 'Test' })
+        emails($.api.emails).send({ to: 'test@example.com', subject: 'Test', body: 'Test' })
       ).rejects.toThrow('Failed to connect to Emails.do: Network error')
     })
 
@@ -543,7 +560,7 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       await expect(
-        $.api.emails.send({ to: 'test@example.com', subject: 'Test', body: 'Test' })
+        emails($.api.emails).send({ to: 'test@example.com', subject: 'Test', body: 'Test' })
       ).rejects.toThrow('Rate limit exceeded for Emails.do. Retry after 60 seconds.')
     })
 
@@ -558,7 +575,7 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       await expect(
-        $.api.emails.send({ to: 'test@example.com', subject: 'Test', body: 'Test' })
+        emails($.api.emails).send({ to: 'test@example.com', subject: 'Test', body: 'Test' })
       ).rejects.toThrow('Request to Emails.do timed out')
     })
   })
@@ -572,15 +589,15 @@ describe('Integrations Layer', () => {
       })
       $.setFetch(mockFetch)
 
-      const result = await $.api.emails.send({
+      const result = await emails($.api.emails).send({
         to: 'test@example.com',
         subject: 'Test',
         body: 'Test',
       })
 
       // TypeScript should know result has id and status
-      const id: string = result.id
-      const status: string = result.status
+      const id: string = (result as { id: string }).id
+      const status: string = (result as { status: string }).status
       expect(id).toBe('email-123')
       expect(status).toBe('sent')
     })
@@ -594,11 +611,11 @@ describe('Integrations Layer', () => {
       $.setFetch(mockFetch)
 
       // TypeScript should know these methods exist
-      const charge = await $.api.stripe.charges.create({
+      const charge = await stripe($.api.stripe).charges.create({
         amount: 1000,
         currency: 'usd',
         customer: 'cus_123',
-      })
+      }) as { id: string; amount: number }
 
       expect(charge.id).toBe('ch_123')
       expect(charge.amount).toBe(1000)
@@ -652,7 +669,7 @@ describe('Integrations Layer', () => {
         })
       $.setFetch(mockFetch)
 
-      await $.api.salesforce.query('SELECT Id FROM Account')
+      await salesforce($.api.salesforce).query('SELECT Id FROM Account')
 
       // Should have made 2 requests: token refresh + actual query
       expect(mockFetch).toHaveBeenCalledTimes(2)

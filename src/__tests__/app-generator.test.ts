@@ -30,7 +30,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createElement, type ComponentType, type ReactElement } from 'react'
 import { generateApp, renderWithProviders, screen, waitFor, fireEvent } from '../generators/app'
-import type { AppRoute, GeneratedApp, RenderOptions, RenderResult } from '../generators/app'
+import type { AppRoute, GeneratedApp, RenderOptions, RenderResult, AppGeneratorConfig } from '../generators/app'
 
 describe('App Generator', () => {
   /**
@@ -72,7 +72,7 @@ describe('App Generator', () => {
         restock: (ctx: unknown) => {},
       },
     },
-  })
+  }) satisfies AppGeneratorConfig
 
   describe('App Structure Generation', () => {
     it('should generate an app with all required routes', () => {
@@ -90,7 +90,7 @@ describe('App Generator', () => {
 
       const dashboardRoute = app.routes.find((r: AppRoute) => r.path === '/dashboard')
       expect(dashboardRoute).toBeDefined()
-      expect(dashboardRoute.component).toBeDefined()
+      expect(dashboardRoute!.component).toBeDefined()
     })
 
     it('should include settings route', () => {

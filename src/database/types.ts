@@ -54,6 +54,8 @@ export interface BaseRecord {
   id: string
   createdAt?: Date
   updatedAt?: Date
+  /** Allow any additional fields from schema */
+  [key: string]: unknown
 }
 
 /**

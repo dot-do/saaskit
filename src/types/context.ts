@@ -167,7 +167,7 @@ export interface Context<T extends NounDefinitions = NounDefinitions> {
    * const result = await $.agents.support.run({ message: 'Help!' })
    * ```
    */
-  agents: Record<string, RunnableAgent>
+  agents: Record<string, RunnableAgent | AgentDefinition>
 
   /** Human-in-the-loop handlers */
   human: HumanHandlers
@@ -180,6 +180,15 @@ export interface Context<T extends NounDefinitions = NounDefinitions> {
 
   /** Integration API access */
   api: Record<string, unknown>
+
+  /** Register a third-party integration */
+  integrate: (name: string, config: Record<string, unknown>) => void
+
+  /** Get registered integration */
+  getIntegration: (name: string) => { name: string; config: Record<string, unknown> } | undefined
+
+  /** Set custom fetch function (for testing) */
+  setFetch: (fetchFn: typeof fetch) => void
 
   /** Input payload for verb handlers */
   input: Record<string, unknown>
@@ -274,6 +283,21 @@ export interface AppContext {
    * Schedule builder for defining recurring tasks
    */
   every: ScheduleBuilder
+
+  /**
+   * Integration API access
+   */
+  api: Record<string, unknown>
+
+  /**
+   * Fire and forget event dispatch (durable)
+   */
+  send: (event: string, payload?: Record<string, unknown>) => void
+
+  /**
+   * Wait for action result (durable)
+   */
+  do: (action: string, payload?: Record<string, unknown>) => Promise<unknown>
 }
 
 export interface NotifyOptions {

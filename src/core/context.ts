@@ -193,8 +193,10 @@ function createDbProxy(nouns: string[]): Record<string, NounAccessor> {
 /**
  * Create AI template literal tag function
  */
-function createAiFunction(): ((strings: TemplateStringsArray, ...values: unknown[]) => Promise<string>) &
-  ((prompt: string, options?: Record<string, unknown>) => Promise<string>) {
+type AiFunctionType = ((strings: TemplateStringsArray, ...values: unknown[]) => Promise<string>) &
+  ((prompt: string, options?: Record<string, unknown>) => Promise<string>)
+
+function createAiFunction(): AiFunctionType {
   const fn = function (stringsOrPrompt: TemplateStringsArray | string, ...values: unknown[]): Promise<string> {
     // Called as template literal: $.ai`prompt`
     if (Array.isArray(stringsOrPrompt) && 'raw' in stringsOrPrompt) {
@@ -211,7 +213,7 @@ function createAiFunction(): ((strings: TemplateStringsArray, ...values: unknown
     return Promise.resolve(`AI response for: ${stringsOrPrompt}`)
   }
 
-  return fn as any
+  return fn as AiFunctionType
 }
 
 /**

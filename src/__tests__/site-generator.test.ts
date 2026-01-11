@@ -129,8 +129,8 @@ describe('Site Generator', () => {
       const hero = site.sections.find(s => s.type === 'hero')
 
       expect(hero?.content.primaryCTA).toBeDefined()
-      expect(hero?.content.primaryCTA.text).toBeDefined()
-      expect(hero?.content.primaryCTA.href).toBeDefined()
+      expect((hero?.content.primaryCTA as { text?: string })?.text).toBeDefined()
+      expect((hero?.content.primaryCTA as { href?: string })?.href).toBeDefined()
     })
 
     it('should support optional secondary CTA in Hero', () => {
@@ -152,7 +152,7 @@ describe('Site Generator', () => {
       const hero = site.sections.find(s => s.type === 'hero')
 
       expect(hero?.content.secondaryCTA).toBeDefined()
-      expect(hero?.content.secondaryCTA?.text).toBe('Learn More')
+      expect((hero?.content.secondaryCTA as { text?: string })?.text).toBe('Learn More')
     })
   })
 
@@ -191,10 +191,11 @@ describe('Site Generator', () => {
       const features = site.sections.find(s => s.type === 'features')
 
       expect(features?.content.items).toBeDefined()
-      expect(features?.content.items.length).toBeGreaterThan(0)
+      const items = features?.content.items as Array<{ title: string }>
+      expect(items?.length).toBeGreaterThan(0)
 
       // Features should reference the domain model
-      const featureTexts = features?.content.items.map(f => f.title.toLowerCase()).join(' ')
+      const featureTexts = items?.map(f => f.title.toLowerCase()).join(' ')
       expect(featureTexts).toMatch(/task|project|user/i)
     })
 
@@ -211,7 +212,8 @@ describe('Site Generator', () => {
       const features = site.sections.find(s => s.type === 'features')
 
       // Each feature should have a description
-      features?.content.items.forEach((item: { description: string }) => {
+      const items = features?.content.items as Array<{ description: string }>
+      items?.forEach((item) => {
         expect(item.description).toBeDefined()
         expect(item.description.length).toBeGreaterThan(0)
       })
@@ -234,9 +236,10 @@ describe('Site Generator', () => {
 
       const site = generateSite(app)
       const features = site.sections.find(s => s.type === 'features')
+      const items = features?.content.items as Array<{ title: string }>
 
-      expect(features?.content.items[0].title).toBe('Custom Feature 1')
-      expect(features?.content.items[1].title).toBe('Custom Feature 2')
+      expect(items?.[0]?.title).toBe('Custom Feature 1')
+      expect(items?.[1]?.title).toBe('Custom Feature 2')
     })
 
     it('should generate feature icons based on verb types', () => {
@@ -253,7 +256,8 @@ describe('Site Generator', () => {
       const features = site.sections.find(s => s.type === 'features')
 
       // Each feature should have an icon
-      features?.content.items.forEach((item: { icon: string }) => {
+      const items = features?.content.items as Array<{ icon: string }>
+      items?.forEach((item) => {
         expect(item.icon).toBeDefined()
       })
     })
@@ -298,11 +302,13 @@ describe('Site Generator', () => {
 
       const site = generateSite(app)
       const pricing = site.sections.find(s => s.type === 'pricing')
+      type PricingTier = { name: string; price: number; features?: string[]; highlighted?: boolean }
+      const tiers = pricing?.content.tiers as PricingTier[] | undefined
 
-      expect(pricing?.content.tiers).toHaveLength(2)
+      expect(tiers).toHaveLength(2)
 
-      const freeTier = pricing?.content.tiers.find((t: { name: string }) => t.name === 'Free')
-      const proTier = pricing?.content.tiers.find((t: { name: string }) => t.name === 'Pro')
+      const freeTier = tiers?.find((t) => t.name === 'Free')
+      const proTier = tiers?.find((t) => t.name === 'Pro')
 
       expect(freeTier?.price).toBe(0)
       expect(proTier?.price).toBe(29)
@@ -320,8 +326,10 @@ describe('Site Generator', () => {
 
       const site = generateSite(app)
       const pricing = site.sections.find(s => s.type === 'pricing')
+      type PricingTier = { name: string; features?: string[] }
+      const tiers = pricing?.content.tiers as PricingTier[] | undefined
 
-      const proTier = pricing?.content.tiers.find((t: { name: string }) => t.name === 'Pro')
+      const proTier = tiers?.find((t) => t.name === 'Pro')
       expect(proTier?.features).toEqual(['Feature A', 'Feature B', 'Feature C'])
     })
 
@@ -339,8 +347,10 @@ describe('Site Generator', () => {
 
       const site = generateSite(app)
       const pricing = site.sections.find(s => s.type === 'pricing')
+      type PricingTier = { name: string; highlighted?: boolean }
+      const tiers = pricing?.content.tiers as PricingTier[] | undefined
 
-      const proTier = pricing?.content.tiers.find((t: { name: string }) => t.name === 'Pro')
+      const proTier = tiers?.find((t) => t.name === 'Pro')
       expect(proTier?.highlighted).toBe(true)
     })
 
@@ -354,9 +364,10 @@ describe('Site Generator', () => {
 
       const site = generateSite(app)
       const pricing = site.sections.find(s => s.type === 'pricing')
+      const tiers = pricing?.content.tiers as unknown[] | undefined
 
       // Should generate reasonable defaults or omit section
-      expect(pricing === undefined || pricing.content.tiers.length > 0).toBe(true)
+      expect(pricing === undefined || (tiers?.length ?? 0) > 0).toBe(true)
     })
   })
 
@@ -390,9 +401,10 @@ describe('Site Generator', () => {
 
       const site = generateSite(app)
       const cta = site.sections.find(s => s.type === 'cta')
+      const headline = cta?.content.headline as string | undefined
 
-      expect(cta?.content.headline).toBeDefined()
-      expect(cta?.content.headline.length).toBeGreaterThan(0)
+      expect(headline).toBeDefined()
+      expect(headline?.length).toBeGreaterThan(0)
     })
 
     it('should render CTA with action button', () => {
@@ -404,10 +416,11 @@ describe('Site Generator', () => {
 
       const site = generateSite(app)
       const cta = site.sections.find(s => s.type === 'cta')
+      const button = cta?.content.button as { text?: string; href?: string } | undefined
 
-      expect(cta?.content.button).toBeDefined()
-      expect(cta?.content.button.text).toBeDefined()
-      expect(cta?.content.button.href).toBeDefined()
+      expect(button).toBeDefined()
+      expect(button?.text).toBeDefined()
+      expect(button?.href).toBeDefined()
     })
 
     it('should support custom CTA content', () => {
@@ -429,10 +442,11 @@ describe('Site Generator', () => {
 
       const site = generateSite(app)
       const cta = site.sections.find(s => s.type === 'cta')
+      const button = cta?.content.button as { text?: string } | undefined
 
       expect(cta?.content.headline).toBe('Start Your Free Trial Today')
       expect(cta?.content.subheadline).toBe('No credit card required')
-      expect(cta?.content.button.text).toBe('Get Started Free')
+      expect(button?.text).toBe('Get Started Free')
     })
   })
 
@@ -516,9 +530,10 @@ describe('Site Generator', () => {
 
       const site = generateSite(app)
       const footer = site.sections.find(s => s.type === 'footer')
+      const social = footer?.content.social as { twitter?: string } | undefined
 
-      expect(footer?.content.social).toBeDefined()
-      expect(footer?.content.social.twitter).toBe('https://twitter.com/taskflow')
+      expect(social).toBeDefined()
+      expect(social?.twitter).toBe('https://twitter.com/taskflow')
     })
   })
 
@@ -614,8 +629,8 @@ describe('Site Generator', () => {
 
       // Props should be structured for @mdxui/beacon Hero
       expect(hero?.props).toBeDefined()
-      expect(hero?.props.heading).toBeDefined()
-      expect(hero?.props.subheading).toBeDefined()
+      expect(hero!.props!.heading).toBeDefined()
+      expect(hero!.props!.subheading).toBeDefined()
     })
   })
 
@@ -674,7 +689,7 @@ describe('Site Generator', () => {
 
       // Layout should be mobile-first
       expect(site.layout.mobile).toBeDefined()
-      expect(site.layout.mobile.direction).toBe('column')
+      expect(site.layout.mobile!.direction).toBe('column')
     })
   })
 
@@ -721,9 +736,9 @@ describe('Site Generator', () => {
       const site = generateSite(app)
 
       expect(site.meta.og).toBeDefined()
-      expect(site.meta.og.title).toContain('TaskFlow')
-      expect(site.meta.og.description).toBe('Task management made simple')
-      expect(site.meta.og.type).toBe('website')
+      expect(site.meta.og!.title).toContain('TaskFlow')
+      expect(site.meta.og!.description).toBe('Task management made simple')
+      expect(site.meta.og!.type).toBe('website')
     })
 
     it('should generate Twitter Card meta tags', () => {
@@ -736,8 +751,8 @@ describe('Site Generator', () => {
       const site = generateSite(app)
 
       expect(site.meta.twitter).toBeDefined()
-      expect(site.meta.twitter.card).toBe('summary_large_image')
-      expect(site.meta.twitter.title).toContain('TaskFlow')
+      expect(site.meta.twitter!.card).toBe('summary_large_image')
+      expect(site.meta.twitter!.title).toContain('TaskFlow')
     })
 
     it('should support custom meta tags', () => {
@@ -785,8 +800,8 @@ describe('Site Generator', () => {
       const site = generateSite(app)
 
       expect(site.meta.jsonLd).toBeDefined()
-      expect(site.meta.jsonLd['@type']).toBe('SoftwareApplication')
-      expect(site.meta.jsonLd.name).toBe('TaskFlow')
+      expect(site.meta.jsonLd!['@type']).toBe('SoftwareApplication')
+      expect(site.meta.jsonLd!.name).toBe('TaskFlow')
     })
   })
 
@@ -830,8 +845,9 @@ describe('Site Generator', () => {
       const hero = site.sections.find(s => s.type === 'hero')
 
       // Hero should have AI-generated headline
-      expect(hero?.content.headline).toBeDefined()
-      expect(hero?.content.headline.length).toBeGreaterThan(10)
+      const headline = hero?.content.headline as string | undefined
+      expect(headline).toBeDefined()
+      expect(headline?.length).toBeGreaterThan(10)
     })
 
     it('should generate feature descriptions with AI', async () => {
@@ -850,7 +866,8 @@ describe('Site Generator', () => {
       const features = site.sections.find(s => s.type === 'features')
 
       // Feature descriptions should be meaningful
-      features?.content.items.forEach((item: { description: string }) => {
+      const items = features?.content.items as Array<{ description: string }> | undefined
+      items?.forEach((item) => {
         expect(item.description).toBeDefined()
         expect(item.description.length).toBeGreaterThan(20)
       })
@@ -875,7 +892,7 @@ describe('Site Generator', () => {
 
       // Copy should address the hero's journey
       expect(site.storyBrand).toBeDefined()
-      expect(site.storyBrand.hero).toBe('Small business owners')
+      expect(site.storyBrand!.hero).toBe('Small business owners')
     })
 
     it('should fall back to generated copy when AI fails', async () => {

@@ -12,8 +12,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { createContext } from '../core/context'
-import type { Context } from '../types/context'
+import { createContext, type ExtendedContext } from '../core/context'
 
 /**
  * Plan definition for SaaSkit
@@ -71,7 +70,7 @@ describe('Stripe Integration', () => {
   /**
    * Factory function for creating test contexts with Stripe integration
    */
-  const createStripeContext = (config: Partial<any> = {}): Context => {
+  const createStripeContext = (config: Partial<Record<string, unknown>> = {}): ExtendedContext => {
     const $ = createContext({
       nouns: ['Customer', 'Subscription', 'Plan', 'Invoice', 'UsageMeter'],
       ...config,

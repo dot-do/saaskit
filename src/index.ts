@@ -224,3 +224,294 @@ export {
   getRelationshipTarget,
   RELATIONSHIP_OPERATORS,
 } from './parsers'
+
+// Studio - Management Console for YOUR SaaS
+export { createStudio } from './studio'
+export type {
+  // Configuration
+  StudioConfig,
+  // Core interface
+  StudioInterface,
+  // Metrics
+  StudioMetrics,
+  TrendDataPoint,
+  MrrTrend,
+  ChurnTrend,
+  CustomerGrowthTrend,
+  TrendPeriodOptions,
+  MetricsInterface,
+  // Customers (aliased to avoid conflict with components/pages types)
+  Customer as StudioCustomer,
+  CustomerStatus,
+  CustomerSubscription,
+  BillingHistoryEntry,
+  ActivityTimelineEntry,
+  CustomerListOptions,
+  CustomerListResult,
+  CancelOptions,
+  ApplyDiscountOptions,
+  ExtendTrialOptions as StudioExtendTrialOptions,
+  ActionResult,
+  UpgradeResult,
+  DowngradeResult,
+  CancelResult,
+  ReactivateResult,
+  ApplyDiscountResult,
+  ExtendTrialResult,
+  CustomersInterface,
+  // Revenue
+  RevenueSummary,
+  RevenuePeriodOptions,
+  RevenueTimeSeries,
+  RevenueData,
+  PlanDistribution,
+  GrowthRate,
+  ExpansionRevenue,
+  ContractionRevenue,
+  CohortAnalysisOptions,
+  CohortData,
+  RevenueInterface,
+  // Usage
+  ApiUsageSummary,
+  UsageData,
+  UsageTrendOptions,
+  UsageTrend,
+  FeatureAdoption,
+  CustomerUsage,
+  TopUser,
+  AtRiskCustomer,
+  UsageInterface,
+  // Alerts
+  AlertSeverity,
+  AlertStatus,
+  AlertType,
+  Alert,
+  ChurnRiskAlert,
+  GrowthOpportunityAlert,
+  UsageAnomalyAlert,
+  AlertListOptions,
+  AlertListResult,
+  AlertSummary,
+  AcknowledgeAlertOptions,
+  SnoozeAlertOptions,
+  ResolveAlertOptions,
+  AlertsInterface,
+  // Insights
+  RevenueForecast,
+  ForecastFactor,
+  EnhancedCohortData,
+  CustomerHealthScore,
+  GrowthInsights,
+  EngagementMetrics,
+  InsightsInterface,
+  // Notifications (aliased to avoid conflict with NotificationSettings)
+  NotificationChannel,
+  NotificationTrigger,
+  NotificationRule,
+  EmailNotificationConfig,
+  SlackNotificationConfig,
+  WebhookNotificationConfig,
+  NotificationDelivery,
+  CreateNotificationRuleOptions,
+  NotificationsInterface,
+  // Team (aliased to avoid conflict with components/pages types)
+  TeamRole as StudioTeamRole,
+  TeamMember as StudioTeamMember,
+  InviteMemberOptions,
+  InviteResult,
+  UpdateRoleResult,
+  RolePermissions,
+  TeamInterface,
+  // Settings (aliased to avoid conflict with components/pages types)
+  AppSettings as StudioAppSettings,
+  BillingSettings,
+  NotificationSettings,
+  ConnectedIntegration,
+  UpdateSettingsOptions,
+  UpdateBillingOptions,
+  UpdateNotificationOptions,
+  SettingsInterface,
+  // Connection
+  ConnectionStatus,
+  // Events
+  StudioEventType,
+  StudioEventHandler,
+} from './studio'
+
+// MCP Generator - Model Context Protocol for AI-native SaaS
+export { createMCPGenerator, generateMCPServer } from './mcp-generator'
+export type {
+  // Main interfaces
+  MCPGenerator,
+  MCPGeneratorConfig,
+  MCPServerConfig,
+  // Tool types
+  MCPTool,
+  MCPToolResult,
+  // Resource types
+  MCPResource,
+  MCPResourceTemplate,
+  MCPResourceContent,
+  // Prompt types
+  MCPPrompt,
+  MCPPromptArgument,
+  MCPPromptResult,
+  // Server types
+  MCPServerInfo,
+  MCPCapabilities,
+  // Sampling types
+  MCPSamplingMessage,
+  MCPSamplingRequest,
+  // Transport types
+  MCPStdioTransport,
+  MCPJSONRPCMessage,
+  // Utility types
+  JSONSchema,
+  JSONSchemaProperty,
+} from './mcp-generator'
+export { toMCPKey, fromMCPKey, generateToolDescription, generateResourceDescription } from './mcp-generator'
+
+// SDK Generator - Type-safe client SDKs for TypeScript, Python, and Go
+export {
+  createSDKGenerator,
+  generateTypeScriptSDK,
+  generatePythonSDK,
+  generateGoSDK,
+  // Utilities
+  parseFieldType,
+  parseNoun as parseSDKNoun,
+  parseNouns as parseSDKNouns,
+  pluralize as sdkPluralize,
+  toSnakeCase,
+  toCamelCase,
+} from './sdk-generator'
+export type {
+  // Main interfaces
+  SDKGenerator,
+  SDKConfig,
+  GeneratedSDK,
+  GeneratedFiles,
+  // Language-specific configs
+  TypeScriptSDKConfig,
+  PythonSDKConfig,
+  GoSDKConfig,
+  // Input types
+  NounSchema as SDKNounSchema,
+  NounsConfig as SDKNounsConfig,
+  VerbsConfig as SDKVerbsConfig,
+  VerbHandler as SDKVerbHandler,
+  NounVerbs as SDKNounVerbs,
+  FieldType as SDKFieldType,
+  // Auth configuration
+  AuthConfig as SDKAuthConfig,
+  PaginationStrategy,
+  RetryStrategy as SDKRetryStrategy,
+  RetryConfig as SDKRetryConfig,
+  CircuitBreakerConfig as SDKCircuitBreakerConfig,
+  RateLimitConfig as SDKRateLimitConfig,
+  LoggingConfig as SDKLoggingConfig,
+  // Parsed types
+  ParsedField as SDKParsedField,
+  ParsedNoun as SDKParsedNoun,
+  // Publisher types
+  Publisher as SDKPublisher,
+  PublisherConfig as SDKPublisherConfig,
+  PublishResult as SDKPublishResult,
+  PublishAllResult as SDKPublishAllResult,
+  NpmConfig as SDKNpmConfig,
+  PyPIConfig as SDKPyPIConfig,
+  GoModulesConfig as SDKGoModulesConfig,
+  WebhookConfig as SDKWebhookConfig,
+} from './sdk-generator'
+
+// Re-export publisher functions
+export {
+  createPublisher,
+  publishAllSDKs,
+  generateAllSDKs,
+  createSchemaHash,
+} from './sdk-generator'
+
+// App Generator - React admin dashboard generator
+export { generateApp } from './generators/app'
+export type {
+  // Main interfaces
+  AppGeneratorConfig,
+  GeneratedApp,
+  AppRoute,
+  // Noun/Verb types
+  NounsConfig as AppNounsConfig,
+  VerbsConfig as AppVerbsConfig,
+  VerbHandler as AppVerbHandler,
+  VerbContext as AppVerbContext,
+  FieldType as AppFieldType,
+  NounFields as AppNounFields,
+  // Parsed types
+  ParsedField as AppParsedField,
+  ParsedNoun as AppParsedNoun,
+  // User and permissions
+  AppUser,
+  // Render options
+  RenderOptions as AppRenderOptions,
+  RenderResult as AppRenderResult,
+  RealtimeEvent as AppRealtimeEvent,
+  // Customization
+  AppCustomization,
+  FieldRenderer,
+  FieldRendererContext,
+  FieldRendererRegistry,
+  AppPlugin,
+  PluginContext,
+  PluginPosition,
+  AppTheme,
+  MobileConfig,
+  ComponentOverrides,
+  DashboardComponentProps,
+  ListPageComponentProps,
+  ShowPageComponentProps,
+  FormPageComponentProps,
+} from './generators/app'
+
+// Customization helpers
+export {
+  getFieldRenderer,
+  getComponentOverride,
+  getPluginsForPosition,
+  getThemeCSSVariables,
+  isHiddenOnMobile,
+  getResponsiveClasses,
+  mergeCustomization,
+  defaultCustomization,
+} from './generators/app/customization'
+
+// App Context
+export { AppProvider as AppGeneratorProvider, useAppContext as useAppGeneratorContext } from './generators/app/context'
+export type { AppContextValue as AppGeneratorContextValue, AppProviderProps as AppGeneratorProviderProps } from './generators/app/context'
+
+// CLI Generator - Command-line interface generator
+export { createCLIGenerator, generateCLI } from './cli-generator'
+export type {
+  // Main interfaces
+  CLIGenerator,
+  CLIConfig,
+  GeneratedCLI,
+  // Command types
+  CommandInfo,
+  CommandArg,
+  CommandOption,
+  CustomCommand,
+  // Auth configuration
+  CLIAuthConfig,
+  // Shell types
+  ShellType,
+  OutputFormat as CLIOutputFormat,
+  // Internal types
+  ParsedNoun as CLIParsedNoun,
+  ParsedField as CLIParsedField,
+  NounsConfig as CLINounsConfig,
+  VerbsConfig as CLIVerbsConfig,
+  NounVerbs as CLINounVerbs,
+  NounSchema as CLINounSchema,
+  FieldType as CLIFieldType,
+  GeneratedFiles as CLIGeneratedFiles,
+} from './cli-generator'

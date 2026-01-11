@@ -19,10 +19,8 @@ import { join } from 'path'
 import { tmpdir } from 'os'
 
 // These imports will fail until implementation exists
-// @ts-expect-error - Implementation not yet created
 import { init, dev, deploy, build } from '../cli'
-// @ts-expect-error - Implementation not yet created
-import type { InitOptions, DevOptions, DeployOptions, CLIResult } from '../cli/types'
+import type { InitOptions, DevOptions, DeployOptions, CLIResult, DevServer } from '../cli/types'
 
 describe('CLI: npx saaskit init', () => {
   let testDir: string
@@ -305,7 +303,7 @@ describe('CLI: npx saaskit init', () => {
 
 describe('CLI: npx saaskit dev', () => {
   let testDir: string
-  let devServer: { stop: () => Promise<void> } | null = null
+  let devServer: DevServer | null = null
 
   beforeEach(async () => {
     testDir = join(tmpdir(), `saaskit-dev-test-${Date.now()}`)
@@ -340,7 +338,7 @@ describe('CLI: npx saaskit dev', () => {
         port: 0, // Random available port
       })
 
-      devServer = result.server
+      devServer = result.server ?? null
 
       expect(result.success).toBe(true)
       expect(result.port).toBeGreaterThan(0)
@@ -352,7 +350,7 @@ describe('CLI: npx saaskit dev', () => {
         port: 0,
       })
 
-      devServer = result.server
+      devServer = result.server ?? null
 
       expect(result.url).toMatch(/^http:\/\/localhost:\d+/)
     })
@@ -362,7 +360,7 @@ describe('CLI: npx saaskit dev', () => {
         directory: testDir,
       })
 
-      devServer = result.server
+      devServer = result.server ?? null
 
       // Should either use 3000 or find next available
       expect(result.port).toBeGreaterThanOrEqual(3000)
@@ -374,7 +372,7 @@ describe('CLI: npx saaskit dev', () => {
         directory: testDir,
         port: 3000,
       })
-      devServer = result1.server
+      devServer = result1.server ?? null
 
       // Start second server - should use different port
       const result2 = await dev({
@@ -383,7 +381,7 @@ describe('CLI: npx saaskit dev', () => {
 
       expect(result2.port).not.toBe(result1.port)
 
-      await result2.server.stop()
+      await result2.server!.stop()
     })
 
     it('should compile TypeScript on startup', async () => {
@@ -392,7 +390,7 @@ describe('CLI: npx saaskit dev', () => {
         port: 0,
       })
 
-      devServer = result.server
+      devServer = result.server ?? null
 
       expect(result.compiled).toBe(true)
     })
@@ -406,11 +404,11 @@ describe('CLI: npx saaskit dev', () => {
         port: 0,
       })
 
-      devServer = result.server
+      devServer = result.server ?? null
 
       expect(result.success).toBe(true)
       expect(result.typeErrors).toBeDefined()
-      expect(result.typeErrors.length).toBeGreaterThan(0)
+      expect(result.typeErrors!.length).toBeGreaterThan(0)
     })
   })
 
@@ -425,10 +423,10 @@ describe('CLI: npx saaskit dev', () => {
         port: 0,
       })
 
-      devServer = result.server
+      devServer = result.server ?? null
 
       const changePromise = new Promise<string>((resolve) => {
-        result.server.onReload((file: string) => resolve(file))
+        result.server!.onReload((file: string) => resolve(file))
       })
 
       // Modify a file
@@ -445,10 +443,10 @@ describe('CLI: npx saaskit dev', () => {
         port: 0,
       })
 
-      devServer = result.server
+      devServer = result.server ?? null
 
       const rebuildPromise = new Promise<boolean>((resolve) => {
-        result.server.onRebuild(() => resolve(true))
+        result.server!.onRebuild(() => resolve(true))
       })
 
       // Modify a file
@@ -465,7 +463,7 @@ describe('CLI: npx saaskit dev', () => {
         port: 0,
       })
 
-      devServer = result.server
+      devServer = result.server ?? null
 
       // Write invalid syntax
       writeFileSync(join(testDir, 'app.tsx'), 'invalid {{{{ syntax')
@@ -473,7 +471,7 @@ describe('CLI: npx saaskit dev', () => {
       // Server should still be running
       await new Promise((resolve) => setTimeout(resolve, 100))
 
-      expect(result.server.isRunning()).toBe(true)
+      expect(result.server!.isRunning()).toBe(true)
     })
 
     it('should recover when syntax error is fixed', async () => {
@@ -482,7 +480,7 @@ describe('CLI: npx saaskit dev', () => {
         port: 0,
       })
 
-      devServer = result.server
+      devServer = result.server ?? null
 
       // Write invalid syntax
       writeFileSync(join(testDir, 'app.tsx'), 'invalid syntax')
@@ -493,7 +491,7 @@ describe('CLI: npx saaskit dev', () => {
       writeFileSync(join(testDir, 'app.tsx'), 'export const valid = true')
 
       const rebuildPromise = new Promise<boolean>((resolve) => {
-        result.server.onRebuild(() => resolve(true))
+        result.server!.onRebuild(() => resolve(true))
       })
 
       const rebuilt = await rebuildPromise
@@ -507,10 +505,10 @@ describe('CLI: npx saaskit dev', () => {
         port: 0,
       })
 
-      devServer = result.server
+      devServer = result.server ?? null
 
       let reloadCalled = false
-      result.server.onReload(() => {
+      result.server!.onReload(() => {
         reloadCalled = true
       })
 
@@ -535,7 +533,7 @@ describe('CLI: npx saaskit dev', () => {
         port: 0,
       })
 
-      devServer = result.server
+      devServer = result.server ?? null
 
       expect(result.endpoints).toContain('/admin')
     })
@@ -546,7 +544,7 @@ describe('CLI: npx saaskit dev', () => {
         port: 0,
       })
 
-      devServer = result.server
+      devServer = result.server ?? null
 
       expect(result.endpoints).toContain('/api')
     })
@@ -557,7 +555,7 @@ describe('CLI: npx saaskit dev', () => {
         port: 0,
       })
 
-      devServer = result.server
+      devServer = result.server ?? null
 
       expect(result.nouns).toBeDefined()
       expect(Array.isArray(result.nouns)).toBe(true)
@@ -569,7 +567,7 @@ describe('CLI: npx saaskit dev', () => {
         port: 0,
       })
 
-      devServer = result.server
+      devServer = result.server ?? null
 
       expect(result.verbs).toBeDefined()
       expect(typeof result.verbs).toBe('object')
@@ -666,9 +664,9 @@ describe('CLI: npx saaskit deploy', () => {
       })
 
       expect(result.urls).toBeDefined()
-      expect(result.urls.app).toMatch(/\.saas\.dev$/)
-      expect(result.urls.api).toMatch(/api\..*\.saas\.dev$/)
-      expect(result.urls.docs).toBeDefined()
+      expect(result.urls!.app).toMatch(/\.saas\.dev$/)
+      expect(result.urls!.api).toMatch(/api\..*\.saas\.dev$/)
+      expect(result.urls!.docs).toBeDefined()
     })
 
     it('should build before deploying', async () => {
@@ -692,7 +690,7 @@ describe('CLI: npx saaskit deploy', () => {
 
       expect(result.success).toBe(false)
       expect(result.typeErrors).toBeDefined()
-      expect(result.typeErrors.length).toBeGreaterThan(0)
+      expect(result.typeErrors!.length).toBeGreaterThan(0)
     })
 
     it('should support dry run mode', async () => {
@@ -1019,7 +1017,7 @@ const d = 4`
       })
 
       expect(result.errorsByFile).toBeDefined()
-      expect(Object.keys(result.errorsByFile).length).toBe(2)
+      expect(Object.keys(result.errorsByFile!).length).toBe(2)
     })
   })
 })
@@ -1238,7 +1236,7 @@ describe('CLI: Interactive Mode', () => {
         (call) => call[0]?.name === 'template'
       )
 
-      expect(templatePrompt[0].choices).toContainEqual(
+      expect(templatePrompt![0].choices).toContainEqual(
         expect.objectContaining({
           value: 'todo',
           description: expect.any(String),

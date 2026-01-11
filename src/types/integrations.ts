@@ -27,6 +27,8 @@ export interface IntegrationConfigOptions {
   webhook?: string
   /** OAuth configuration */
   oauth?: OAuthConfig
+  /** Allow additional properties for extensibility */
+  [key: string]: unknown
 }
 
 /**

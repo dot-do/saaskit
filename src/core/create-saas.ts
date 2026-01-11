@@ -561,11 +561,16 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
                 const data = args[1] as { plan: string }
 
                 const db = createDbProxy()
-                const org = await db.Organization.get(orgId, { include: ['plan'] })
+                const orgAccessor = db.Organization
+                const planAccessor = db.Plan
+                if (!orgAccessor || !planAccessor) {
+                  throw new Error('Organization or Plan noun not registered')
+                }
+                const org = await orgAccessor.get(orgId, { include: ['plan'] })
                 const previousPlan = org?.plan as { name?: string } | undefined
-                const newPlan = await db.Plan.get(data.plan)
+                const newPlan = await planAccessor.get(data.plan)
 
-                await db.Organization.update(orgId, { plan: data.plan })
+                await orgAccessor.update(orgId, { plan: data.plan })
                 await emit(eventName, org, {
                   previousPlan: previousPlan?.name || 'None',
                   newPlan: newPlan?.name || 'Unknown',
@@ -577,8 +582,12 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
               if (nounProp === 'APIKey' && verbProp === 'revoke') {
                 const keyId = args[0] as string
                 const db = createDbProxy()
-                const apiKey = await db.APIKey.get(keyId)
-                await db.APIKey.update(keyId, { isActive: false })
+                const apiKeyAccessor = db.APIKey
+                if (!apiKeyAccessor) {
+                  throw new Error('APIKey noun not registered')
+                }
+                const apiKey = await apiKeyAccessor.get(keyId)
+                await apiKeyAccessor.update(keyId, { isActive: false })
                 await emit(eventName, apiKey)
                 return apiKey
               }
@@ -613,7 +622,10 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
 
       // Update lastUsedAt
       const db = createDbProxy()
-      await db.APIKey.update(stored.id, { lastUsedAt: new Date() })
+      const apiKeyAccessor = db.APIKey
+      if (apiKeyAccessor) {
+        await apiKeyAccessor.update(stored.id, { lastUsedAt: new Date() })
+      }
 
       return {
         valid: true,
@@ -629,10 +641,14 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
   const usage: UsageHelpers = {
     async increment(orgId: string, metric: string, amount: number = 1) {
       const db = createDbProxy()
+      const usageAccessor = db.Usage
+      if (!usageAccessor) {
+        throw new Error('Usage noun not registered')
+      }
 
       // Find any existing record for this org and metric
       // (The most recent one if multiple exist)
-      const allUsage = await db.Usage!.list()
+      const allUsage = await usageAccessor.list()
       const existing = allUsage.filter(
         (u) => u.organization === orgId && u.metric === metric
       )
@@ -644,11 +660,11 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
           const bTime = (b.period as Date)?.getTime() || 0
           return bTime - aTime
         })
-        await db.Usage!.update(existing[0].id, {
+        await usageAccessor.update(existing[0].id, {
           value: (existing[0].value as number) + amount,
         })
       } else {
-        await db.Usage!.create({
+        await usageAccessor.create({
           organization: orgId,
           metric,
           value: amount,
@@ -659,7 +675,11 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
 
     async aggregate(orgId: string, metric: string, range: { start: Date; end: Date }) {
       const db = createDbProxy()
-      const all = await db.Usage.list()
+      const usageAccessor = db.Usage
+      if (!usageAccessor) {
+        throw new Error('Usage noun not registered')
+      }
+      const all = await usageAccessor.list()
 
       let total = 0
       for (const record of all) {
@@ -677,9 +697,13 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
 
     async getByMetric(orgId: string, metric: string) {
       const db = createDbProxy()
+      const usageAccessor = db.Usage
+      if (!usageAccessor) {
+        throw new Error('Usage noun not registered')
+      }
 
       // Find all records for this org and metric, sum them or get the most recent
-      const allUsage = await db.Usage!.list()
+      const allUsage = await usageAccessor.list()
       const matching = allUsage.filter(
         (u) => u.organization === orgId && u.metric === metric
       )
@@ -698,7 +722,11 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
   const metrics: MetricsHelpers = {
     async query(opts: { name: string; start: Date; end: Date }) {
       const db = createDbProxy()
-      const all = await db.Metric.list()
+      const metricAccessor = db.Metric
+      if (!metricAccessor) {
+        throw new Error('Metric noun not registered')
+      }
+      const all = await metricAccessor.list()
 
       const results: Array<{ value: number }> = []
       for (const record of all) {
@@ -715,7 +743,11 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
 
     async sum(name: string) {
       const db = createDbProxy()
-      const all = await db.Metric.list()
+      const metricAccessor = db.Metric
+      if (!metricAccessor) {
+        throw new Error('Metric noun not registered')
+      }
+      const all = await metricAccessor.list()
 
       let total = 0
       for (const record of all) {
@@ -729,7 +761,11 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
 
     async avg(name: string) {
       const db = createDbProxy()
-      const all = await db.Metric.list()
+      const metricAccessor = db.Metric
+      if (!metricAccessor) {
+        throw new Error('Metric noun not registered')
+      }
+      const all = await metricAccessor.list()
 
       let total = 0
       let count = 0
@@ -745,7 +781,11 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
 
     async min(name: string) {
       const db = createDbProxy()
-      const all = await db.Metric.list()
+      const metricAccessor = db.Metric
+      if (!metricAccessor) {
+        throw new Error('Metric noun not registered')
+      }
+      const all = await metricAccessor.list()
 
       let minVal = Infinity
       for (const record of all) {
@@ -760,7 +800,11 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
 
     async max(name: string) {
       const db = createDbProxy()
-      const all = await db.Metric.list()
+      const metricAccessor = db.Metric
+      if (!metricAccessor) {
+        throw new Error('Metric noun not registered')
+      }
+      const all = await metricAccessor.list()
 
       let maxVal = -Infinity
       for (const record of all) {
@@ -801,7 +845,7 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
   }
 
   return {
-    db: createDbProxy(),
+    db: createDbProxy() as Record<string, DbAccessor>,
     auth,
     usage,
     metrics,

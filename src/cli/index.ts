@@ -6,6 +6,12 @@
  * - `dev()` - Start development server with hot reload
  * - `deploy()` - Deploy to SaaS.Dev
  * - `build()` - Compile TypeScript
+ *
+ * Enhanced with:
+ * - Interactive mode with validation and suggestions
+ * - Multiple output formats (table, json, yaml)
+ * - Color output with quiet mode for scripting
+ * - Progress indicators and spinners
  */
 
 import { existsSync, mkdirSync, writeFileSync, readFileSync, watch, rmSync } from 'fs'
@@ -37,6 +43,12 @@ import { todoAppTsx } from './templates/todo'
 import { ecommerceAppTsx } from './templates/ecommerce'
 import { recruiterAppTsx } from './templates/recruiter'
 import { AVAILABLE_TEMPLATES, TEMPLATE_DESCRIPTIONS, type TemplateName } from './templates'
+
+// Re-export interactive and output utilities
+export { InteractivePrompt, Validator, Suggester, Autocomplete, runWizard } from './interactive'
+export type { TextPromptOptions, SelectPromptOptions, SelectChoice, ConfirmPromptOptions, WizardStep } from './interactive'
+export { Output, TableFormatter, ProgressBar, Spinner, color, formatJson, formatYaml } from './output'
+export type { OutputConfig, OutputFormat, TableColumn, ProgressBarOptions, SpinnerOptions } from './output'
 
 export type {
   InitOptions,
@@ -70,19 +82,38 @@ function isValidSubdomain(subdomain: string): boolean {
 
 /**
  * Initialize a new SaaSKit project
+ *
+ * Enhanced interactive mode features:
+ * - Input validation with helpful error messages
+ * - Automatic name suggestion for invalid inputs
+ * - Template selection with descriptions
+ * - Git initialization with user confirmation
+ * - Dependency installation with progress
  */
 export async function init(options: InitOptions): Promise<InitResult> {
-  const { directory, git = true, install = true, template = 'minimal', interactive = false, prompt } = options
+  const { directory, git = true, install = true, interactive = false, prompt } = options
+
+  // Track selected template (mutable for interactive mode)
+  let selectedTemplate = options.template ?? 'minimal'
 
   // Handle interactive mode - prompt for name if not provided
   let name = options.name
   if (!name) {
     if (prompt) {
+      // Prompt for name with validation feedback
       name = await prompt<string>({
         type: 'text',
         name: 'name',
         message: 'Project name:',
       })
+
+      // Validate and potentially re-prompt with suggestion
+      if (name && !isValidProjectName(name)) {
+        const suggestion = suggestValidName(name)
+        // In interactive mode, we could offer the suggestion
+        // For now, auto-correct to the suggestion
+        name = suggestion
+      }
     } else {
       return {
         success: false,
@@ -93,7 +124,7 @@ export async function init(options: InitOptions): Promise<InitResult> {
 
   // Handle interactive template selection
   if (interactive && prompt) {
-    const selectedTemplate = await prompt<TemplateName>({
+    selectedTemplate = await prompt<TemplateName>({
       type: 'select',
       name: 'template',
       message: 'Select a template:',
@@ -102,10 +133,9 @@ export async function init(options: InitOptions): Promise<InitResult> {
         description: TEMPLATE_DESCRIPTIONS[t],
       })),
     })
-    // Use selected template (would update template variable)
   }
 
-  // Validate project name
+  // Validate project name (for non-interactive mode or if still invalid)
   if (!isValidProjectName(name)) {
     const suggestion = suggestValidName(name)
     return {
@@ -116,10 +146,10 @@ export async function init(options: InitOptions): Promise<InitResult> {
   }
 
   // Validate template
-  if (!AVAILABLE_TEMPLATES.includes(template as TemplateName)) {
+  if (!AVAILABLE_TEMPLATES.includes(selectedTemplate as TemplateName)) {
     return {
       success: false,
-      error: `Invalid template: "${template}". Template not found.`,
+      error: `Invalid template: "${selectedTemplate}". Template not found.`,
       availableTemplates: [...AVAILABLE_TEMPLATES],
     }
   }
@@ -139,7 +169,7 @@ export async function init(options: InitOptions): Promise<InitResult> {
 
   // Get template content
   let appContent: string
-  switch (template) {
+  switch (selectedTemplate) {
     case 'todo':
       appContent = todoAppTsx
       break

@@ -15,10 +15,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
-// These imports will fail until implementation exists
-// @ts-expect-error - Implementation not yet created
 import { createAPIGenerator, generateOpenAPISpec } from '../api-generator'
-// @ts-expect-error - Implementation not yet created
 import type {
   APIGenerator,
   RESTEndpoint,
@@ -27,6 +24,7 @@ import type {
   RateLimitConfig,
   APIKeyAuth,
   CORSConfig,
+  VerbDefinitions,
 } from '../api-generator/types'
 
 describe('API Generator', () => {
@@ -35,7 +33,7 @@ describe('API Generator', () => {
    */
   const createTestAPI = (config: {
     nouns?: Record<string, Record<string, string>>
-    verbs?: Record<string, Record<string, Function>>
+    verbs?: VerbDefinitions
     rateLimiting?: RateLimitConfig
     authentication?: APIKeyAuth
     cors?: CORSConfig
@@ -47,7 +45,7 @@ describe('API Generator', () => {
       },
       verbs: config.verbs ?? {
         Todo: {
-          complete: ($: any) => $.db.Todo.update($.id, { done: true }),
+          complete: ($) => $.db.Todo.update($.id, { done: true }),
         },
       },
       rateLimiting: config.rateLimiting,
@@ -64,8 +62,8 @@ describe('API Generator', () => {
         const endpoint = api.getEndpoint('GET', '/todos')
 
         expect(endpoint).toBeDefined()
-        expect(endpoint.method).toBe('GET')
-        expect(endpoint.path).toBe('/todos')
+        expect(endpoint!.method).toBe('GET')
+        expect(endpoint!.path).toBe('/todos')
       })
 
       it('should return paginated list of records', async () => {
@@ -138,8 +136,8 @@ describe('API Generator', () => {
         const endpoint = api.getEndpoint('POST', '/todos')
 
         expect(endpoint).toBeDefined()
-        expect(endpoint.method).toBe('POST')
-        expect(endpoint.path).toBe('/todos')
+        expect(endpoint!.method).toBe('POST')
+        expect(endpoint!.path).toBe('/todos')
       })
 
       it('should create a new record and return it', async () => {
@@ -219,8 +217,8 @@ describe('API Generator', () => {
         const endpoint = api.getEndpoint('GET', '/todos/:id')
 
         expect(endpoint).toBeDefined()
-        expect(endpoint.method).toBe('GET')
-        expect(endpoint.path).toBe('/todos/:id')
+        expect(endpoint!.method).toBe('GET')
+        expect(endpoint!.path).toBe('/todos/:id')
       })
 
       it('should return a single record by id', async () => {
@@ -271,8 +269,8 @@ describe('API Generator', () => {
         const endpoint = api.getEndpoint('PUT', '/todos/:id')
 
         expect(endpoint).toBeDefined()
-        expect(endpoint.method).toBe('PUT')
-        expect(endpoint.path).toBe('/todos/:id')
+        expect(endpoint!.method).toBe('PUT')
+        expect(endpoint!.path).toBe('/todos/:id')
       })
 
       it('should update an existing record', async () => {
@@ -349,8 +347,8 @@ describe('API Generator', () => {
         const endpoint = api.getEndpoint('DELETE', '/todos/:id')
 
         expect(endpoint).toBeDefined()
-        expect(endpoint.method).toBe('DELETE')
-        expect(endpoint.path).toBe('/todos/:id')
+        expect(endpoint!.method).toBe('DELETE')
+        expect(endpoint!.path).toBe('/todos/:id')
       })
 
       it('should delete an existing record', async () => {
@@ -409,8 +407,8 @@ describe('API Generator', () => {
         const endpoint = api.getEndpoint('POST', '/todos/:id/complete')
 
         expect(endpoint).toBeDefined()
-        expect(endpoint.method).toBe('POST')
-        expect(endpoint.path).toBe('/todos/:id/complete')
+        expect(endpoint!.method).toBe('POST')
+        expect(endpoint!.path).toBe('/todos/:id/complete')
       })
 
       it('should execute verb and return updated record', async () => {
@@ -946,9 +944,18 @@ describe('API Generator', () => {
   })
 
   describe('OpenAPI Specification Generation', () => {
+    // Helper to get spec as object (not YAML string)
+    const getSpec = (api: ReturnType<typeof createTestAPI>) => {
+      const spec = api.generateOpenAPISpec()
+      if (typeof spec === 'string') {
+        throw new Error('Expected OpenAPISpec object, got string')
+      }
+      return spec
+    }
+
     it('should generate valid OpenAPI 3.0 spec', () => {
       const api = createTestAPI()
-      const spec = api.generateOpenAPISpec()
+      const spec = getSpec(api)
 
       expect(spec.openapi).toBe('3.0.0')
       expect(spec).toHaveProperty('info')
@@ -958,7 +965,7 @@ describe('API Generator', () => {
 
     it('should include info section with title and version', () => {
       const api = createTestAPI()
-      const spec = api.generateOpenAPISpec()
+      const spec = getSpec(api)
 
       expect(spec.info).toHaveProperty('title')
       expect(spec.info).toHaveProperty('version')
@@ -966,7 +973,7 @@ describe('API Generator', () => {
 
     it('should generate paths for all noun CRUD operations', () => {
       const api = createTestAPI()
-      const spec = api.generateOpenAPISpec()
+      const spec = getSpec(api)
 
       // List and create
       expect(spec.paths).toHaveProperty('/todos')
@@ -982,7 +989,7 @@ describe('API Generator', () => {
 
     it('should generate paths for verb endpoints', () => {
       const api = createTestAPI()
-      const spec = api.generateOpenAPISpec()
+      const spec = getSpec(api)
 
       expect(spec.paths).toHaveProperty('/todos/{id}/complete')
       expect(spec.paths['/todos/{id}/complete']).toHaveProperty('post')
@@ -990,7 +997,7 @@ describe('API Generator', () => {
 
     it('should generate component schemas for nouns', () => {
       const api = createTestAPI()
-      const spec = api.generateOpenAPISpec()
+      const spec = getSpec(api)
 
       expect(spec.components.schemas).toHaveProperty('Todo')
       expect(spec.components.schemas.Todo).toHaveProperty('type', 'object')
@@ -1002,7 +1009,7 @@ describe('API Generator', () => {
 
     it('should generate request/response schemas', () => {
       const api = createTestAPI()
-      const spec = api.generateOpenAPISpec()
+      const spec = getSpec(api)
 
       expect(spec.components.schemas).toHaveProperty('TodoCreateInput')
       expect(spec.components.schemas).toHaveProperty('TodoUpdateInput')
@@ -1011,7 +1018,7 @@ describe('API Generator', () => {
 
     it('should include error response schemas', () => {
       const api = createTestAPI()
-      const spec = api.generateOpenAPISpec()
+      const spec = getSpec(api)
 
       expect(spec.components.schemas).toHaveProperty('Error')
       expect(spec.components.schemas.Error.properties).toHaveProperty('error')
@@ -1020,19 +1027,19 @@ describe('API Generator', () => {
 
     it('should document query parameters for list endpoints', () => {
       const api = createTestAPI()
-      const spec = api.generateOpenAPISpec()
+      const spec = getSpec(api)
 
-      const listEndpoint = spec.paths['/todos'].get
-      expect(listEndpoint.parameters).toBeDefined()
+      const listEndpoint = spec.paths['/todos']?.get
+      expect(listEndpoint?.parameters).toBeDefined()
 
-      const paramNames = listEndpoint.parameters.map((p: any) => p.name)
+      const paramNames = listEndpoint!.parameters!.map((p: { name: string }) => p.name)
       expect(paramNames).toContain('limit')
       expect(paramNames).toContain('offset')
     })
 
     it('should be serializable to valid JSON', () => {
       const api = createTestAPI()
-      const spec = api.generateOpenAPISpec()
+      const spec = getSpec(api)
 
       expect(() => JSON.stringify(spec)).not.toThrow()
       expect(typeof JSON.stringify(spec)).toBe('string')
@@ -1368,7 +1375,7 @@ describe('API Generator', () => {
       })
 
       expect(spec.servers).toHaveLength(2)
-      expect(spec.servers[0].url).toBe('https://api.example.com')
+      expect(spec.servers![0].url).toBe('https://api.example.com')
     })
   })
 
