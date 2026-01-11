@@ -411,6 +411,7 @@ export interface APIRequest {
 
 export interface APIResponse {
   status: number
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   body: any
   headers: Record<string, string>
 }
@@ -461,6 +462,7 @@ export interface GraphQLRequest {
 }
 
 export interface GraphQLResponse {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any
   errors?: Array<{ message: string }>
 }
@@ -536,11 +538,16 @@ export interface VerbContext {
   input: unknown
   db: {
     [noun: string]: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       get: (id: string) => Promise<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       update: (id: string, data: any) => Promise<any>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       create: (data: any) => Promise<any>
       delete: (id: string) => Promise<void>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       list: (options?: { limit?: number; offset?: number }) => Promise<any[]>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       find: (filter: any) => Promise<any[]>
     }
   }
@@ -551,6 +558,7 @@ export interface VerbContext {
 // API Generator Interface
 // ============================================================================
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SubscriptionCallback = (event: any) => void
 export type UnsubscribeFn = () => void
 

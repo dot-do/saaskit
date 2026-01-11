@@ -34,6 +34,23 @@ import type {
   SlackMessageOptions,
 } from '../types/integrations'
 import { VALID_CONFIG_KEYS } from '../types/integrations'
+
+/**
+ * Get API token from environment variable with fallback for development
+ */
+function getApiToken(): string {
+  const token = process.env.SAASKIT_API_TOKEN
+  if (token) {
+    return `Bearer ${token}`
+  }
+  if (process.env.NODE_ENV !== 'test') {
+    console.warn(
+      '[saaskit] SAASKIT_API_TOKEN environment variable not set. ' +
+        'Using development fallback token. Set SAASKIT_API_TOKEN in production.'
+    )
+  }
+  return 'Bearer saaskit-dev-token'
+}
 import { createBilling } from '../billing/billing'
 import type { BillingInterface } from '../billing/types'
 
@@ -333,7 +350,7 @@ function createApiProxy(
     const fetchFn = getFetch()
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      Authorization: 'Bearer saaskit-token',
+      Authorization: getApiToken(),
     }
 
     if (integrationKey) {
@@ -565,7 +582,7 @@ function createApiProxy(
         const fetchFn = getFetch()
         const headers: Record<string, string> = {
           'Content-Type': 'application/json',
-          Authorization: 'Bearer saaskit-token',
+          Authorization: getApiToken(),
         }
 
         // Add integration key based on config type

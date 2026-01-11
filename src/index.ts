@@ -50,7 +50,8 @@
  */
 
 // Core
-export { defineApp, $ } from './core'
+export { defineApp, $, createContext } from './core'
+export type { ExtendedContext } from './core'
 
 // Components
 export { SaaS, SaaSAdmin } from './components'

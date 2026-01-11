@@ -125,9 +125,111 @@ export interface DeadLetterStats {
 }
 
 /**
+ * Configuration for dead letter queue size limits
+ */
+export interface DeadLetterQueueConfig {
+  /**
+   * Maximum number of entries in the queue (default: 10000)
+   */
+  maxSize: number
+
+  /**
+   * Maximum age of entries in milliseconds (default: 24 hours)
+   */
+  maxAge: number
+}
+
+/**
+ * Default queue configuration
+ */
+const DEFAULT_CONFIG: DeadLetterQueueConfig = {
+  maxSize: 10000,
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours in ms
+}
+
+/**
+ * Current queue configuration
+ */
+let queueConfig: DeadLetterQueueConfig = { ...DEFAULT_CONFIG }
+
+/**
  * In-memory dead letter queue storage
  */
 const deadLetterQueue: Map<string, DeadLetterEntry> = new Map()
+
+/**
+ * Configure dead letter queue limits.
+ *
+ * @param config - Partial configuration to merge with defaults
+ * @returns The current configuration
+ *
+ * @example
+ * ```ts
+ * // Set max size to 5000 entries
+ * configureDeadLetterQueue({ maxSize: 5000 })
+ *
+ * // Set max age to 12 hours
+ * configureDeadLetterQueue({ maxAge: 12 * 60 * 60 * 1000 })
+ * ```
+ */
+export function configureDeadLetterQueue(config: Partial<DeadLetterQueueConfig>): DeadLetterQueueConfig {
+  queueConfig = { ...queueConfig, ...config }
+  return queueConfig
+}
+
+/**
+ * Get the current dead letter queue configuration.
+ *
+ * @returns The current configuration
+ */
+export function getDeadLetterQueueConfig(): DeadLetterQueueConfig {
+  return { ...queueConfig }
+}
+
+/**
+ * Reset dead letter queue configuration to defaults.
+ */
+export function resetDeadLetterQueueConfig(): void {
+  queueConfig = { ...DEFAULT_CONFIG }
+}
+
+/**
+ * Purge entries older than maxAge from the queue.
+ *
+ * @returns Number of entries purged
+ */
+export function purgeExpiredEntries(): number {
+  const cutoff = new Date(Date.now() - queueConfig.maxAge)
+  let purged = 0
+  for (const [id, entry] of deadLetterQueue) {
+    if (entry.deadLetteredAt < cutoff) {
+      deadLetterQueue.delete(id)
+      purged++
+    }
+  }
+  return purged
+}
+
+/**
+ * Evict oldest entries to bring queue under maxSize.
+ *
+ * @returns Number of entries evicted
+ */
+export function evictOldestEntries(): number {
+  if (deadLetterQueue.size <= queueConfig.maxSize) {
+    return 0
+  }
+
+  const entries = Array.from(deadLetterQueue.entries())
+  entries.sort((a, b) => a[1].deadLetteredAt.getTime() - b[1].deadLetteredAt.getTime())
+
+  const toEvict = entries.slice(0, deadLetterQueue.size - queueConfig.maxSize)
+  for (const [id] of toEvict) {
+    deadLetterQueue.delete(id)
+  }
+
+  return toEvict.length
+}
 
 /**
  * Generate a unique ID for dead letter entries

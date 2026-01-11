@@ -84,7 +84,7 @@ export function createListPage(
     const thead = createElement('thead', { key: 'thead' }, createElement('tr', null, headerCells))
 
     // Table body
-    const rows = records.map((record) => {
+    const rows = records.map((record, index) => {
       const cells = noun.fields
         .filter((f) => f.type !== 'relation' || f.cardinality === 'one')
         .map((field) =>
@@ -150,7 +150,8 @@ export function createListPage(
         ])
       )
 
-      return createElement('tr', { key: record.id as string }, cells)
+      // Use index as suffix to ensure uniqueness even with duplicate record IDs
+      return createElement('tr', { key: `${record.id}-${index}` }, cells)
     })
 
     const tbody = createElement('tbody', { key: 'tbody' }, rows)

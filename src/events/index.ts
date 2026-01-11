@@ -34,10 +34,16 @@ export {
   clearDeadLetterQueue,
   getDeadLetterStats,
   purgeDeadLetters,
+  configureDeadLetterQueue,
+  getDeadLetterQueueConfig,
+  resetDeadLetterQueueConfig,
+  purgeExpiredEntries,
+  evictOldestEntries,
   type DeadLetterEntry,
   type AddToDeadLetterOptions,
   type GetDeadLetterOptions,
   type DeadLetterStats,
+  type DeadLetterQueueConfig,
 } from './dead-letter'
 
 // Event deduplication

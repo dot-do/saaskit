@@ -304,6 +304,7 @@ class InMemoryStorage {
 /**
  * Event listener callback function type
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type EventListener = (data: any, filter?: Record<string, unknown>) => void
 
 /**
@@ -327,6 +328,7 @@ class EventEmitter {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   emit(event: string, data: any): void {
     const eventListeners = this.listeners.get(event)
     if (!eventListeners) return
@@ -612,7 +614,9 @@ export function createAPIGenerator(config: APIGeneratorConfig): APIGenerator {
     for (const noun of nounNames) {
       db[noun] = {
         get: async (id: string) => storage.get(noun, id) || null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         update: async (id: string, data: any) => storage.update(noun, id, data),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         create: async (data: any) => {
           const id = data.id || generateId()
           return storage.create(noun, { id, ...data })
@@ -1419,6 +1423,7 @@ function buildOpenAPISpec(config: APIGeneratorConfig): OpenAPISpec {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toYAML(obj: any, indent: number = 0): string {
   const spaces = '  '.repeat(indent)
   let result = ''

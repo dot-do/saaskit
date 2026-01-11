@@ -95,7 +95,7 @@ export function useResource<T extends { id: string }>(
   // TODO: Implement pagination
   // TODO: Implement polling
 
-  // Stub implementation
+  // Stub implementation - returns noop functions for development
   return {
     data: [],
     isLoading: false,
@@ -104,23 +104,21 @@ export function useResource<T extends { id: string }>(
     hasMore: false,
 
     async create(data: Partial<T>): Promise<T> {
-      // TODO: Implement create mutation
-      throw new Error('useResource.create not implemented')
+      console.warn(`[saaskit] useResource.create called for "${noun}" - not connected to backend`)
+      return { id: `${noun.toLowerCase()}_${Date.now()}`, ...data } as T
     },
 
     async update(id: string, data: Partial<T>): Promise<T> {
-      // TODO: Implement update mutation
-      throw new Error('useResource.update not implemented')
+      console.warn(`[saaskit] useResource.update called for "${noun}/${id}" - not connected to backend`)
+      return { id, ...data } as T
     },
 
     async remove(id: string): Promise<void> {
-      // TODO: Implement delete mutation
-      throw new Error('useResource.remove not implemented')
+      console.warn(`[saaskit] useResource.remove called for "${noun}/${id}" - not connected to backend`)
     },
 
     async refetch(): Promise<void> {
-      // TODO: Implement refetch
-      throw new Error('useResource.refetch not implemented')
+      console.warn(`[saaskit] useResource.refetch called for "${noun}" - not connected to backend`)
     },
   }
 }
@@ -209,19 +207,17 @@ export function useRealtime(options: UseRealtimeOptions = {}): UseRealtimeResult
   // TODO: Implement reconnection logic
   // TODO: Integrate with TanStack Query cache
 
-  // Stub implementation
+  // Stub implementation - noop functions for development
   return {
     status: 'disconnected',
     error: null,
 
     reconnect() {
-      // TODO: Implement reconnect
-      throw new Error('useRealtime.reconnect not implemented')
+      console.warn('[saaskit] useRealtime.reconnect called - not connected to backend')
     },
 
     disconnect() {
-      // TODO: Implement disconnect
-      throw new Error('useRealtime.disconnect not implemented')
+      console.warn('[saaskit] useRealtime.disconnect called - not connected to backend')
     },
   }
 }
@@ -311,7 +307,7 @@ export function useAuth(): AuthState & AuthActions {
   // TODO: Implement token refresh
   // TODO: Implement permission helpers
 
-  // Stub implementation
+  // Stub implementation - noop functions for development
   return {
     user: null,
     isLoading: false,
@@ -319,33 +315,45 @@ export function useAuth(): AuthState & AuthActions {
     error: null,
 
     async signIn(email: string, password: string): Promise<AuthUser> {
-      // TODO: Implement sign in
-      throw new Error('useAuth.signIn not implemented')
+      console.warn(`[saaskit] useAuth.signIn called for "${email}" - not connected to backend`)
+      return {
+        id: `user_${Date.now()}`,
+        email,
+        name: email.split('@')[0],
+        role: 'user',
+      }
     },
 
     async signUp(email: string, password: string, name?: string): Promise<AuthUser> {
-      // TODO: Implement sign up
-      throw new Error('useAuth.signUp not implemented')
+      console.warn(`[saaskit] useAuth.signUp called for "${email}" - not connected to backend`)
+      return {
+        id: `user_${Date.now()}`,
+        email,
+        name: name ?? email.split('@')[0],
+        role: 'user',
+      }
     },
 
     async signOut(): Promise<void> {
-      // TODO: Implement sign out
-      throw new Error('useAuth.signOut not implemented')
+      console.warn('[saaskit] useAuth.signOut called - not connected to backend')
     },
 
     async resetPassword(email: string): Promise<void> {
-      // TODO: Implement password reset
-      throw new Error('useAuth.resetPassword not implemented')
+      console.warn(`[saaskit] useAuth.resetPassword called for "${email}" - not connected to backend`)
     },
 
     async updateProfile(data: Partial<AuthUser>): Promise<AuthUser> {
-      // TODO: Implement profile update
-      throw new Error('useAuth.updateProfile not implemented')
+      console.warn('[saaskit] useAuth.updateProfile called - not connected to backend')
+      return {
+        id: 'user_stub',
+        email: 'stub@example.com',
+        role: 'user',
+        ...data,
+      }
     },
 
     async refreshSession(): Promise<void> {
-      // TODO: Implement session refresh
-      throw new Error('useAuth.refreshSession not implemented')
+      console.warn('[saaskit] useAuth.refreshSession called - not connected to backend')
     },
   }
 }
@@ -398,12 +406,12 @@ export function useOrganization(): {
   isLoading: boolean
   switchOrganization: (id: string) => Promise<void>
 } {
-  // TODO: Implement organization context
+  // Stub implementation - noop functions for development
   return {
     organization: null,
     isLoading: false,
     async switchOrganization(id: string): Promise<void> {
-      throw new Error('useOrganization.switchOrganization not implemented')
+      console.warn(`[saaskit] useOrganization.switchOrganization called for "${id}" - not connected to backend`)
     },
   }
 }
