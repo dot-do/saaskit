@@ -953,3 +953,50 @@ Define your business in Nouns and Verbs. We generate everything else.
 <p align="center">
   <a href="https://startups.new">Start Building →</a>
 </p>
+
+---
+
+## Architecture
+
+SaaSkit sits at the **generation layer** - it takes DSL definitions (Nouns + Verbs) and generates code that uses mdxui components.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      mdxui (interfaces)                          │
+│   SiteComponents, AppComponents, AdminComponents, DataProvider   │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓ implements
+┌─────────────────────────────────────────────────────────────────┐
+│              @mdxui/beacon + @mdxui/cockpit (templates)          │
+│   Site sections, App dashboards, Auth flows                      │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓ generates to
+┌─────────────────────────────────────────────────────────────────┐
+│               ★ saaskit (generation) ← YOU ARE HERE              │
+│   DSL (Nouns + Verbs) → App, API, Site, Docs, CLI, SDK, MCP      │
+│   Generates code that uses @mdxui components                     │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓ optionally uses
+┌─────────────────────────────────────────────────────────────────┐
+│                    @dotdo/react (platform)                       │
+│   TanStack DB binding for real-time data sync                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### What SaaSkit Generates
+
+| Output | Using |
+|--------|-------|
+| **App** | React components (raw + @mdxui/cockpit) |
+| **Site** | @mdxui/beacon components |
+| **API** | Self-contained REST/GraphQL/WebSocket |
+| **Docs** | MDX documentation |
+| **CLI** | Command-line interface |
+| **SDK** | TypeScript/Python/Go clients |
+| **MCP** | Model Context Protocol server |
+
+### Key Principle
+
+SaaSkit is **generation, not runtime**. It produces code that uses mdxui abstractions. The generated code is self-contained and can be ejected.
+
+When `@dotdo/react` is available, SaaSkit wires generated code to real backends with durable workflows.
