@@ -209,7 +209,7 @@ export function getCredentialsPath(): string {
 /**
  * Generate config command group
  */
-export function generateConfigCommand(config: CLIConfig): string {
+export function generateConfigCommand(_config: CLIConfig): string {
   return `/**
  * Config Command
  *
@@ -293,7 +293,7 @@ const setCommand = new Command('set')
         break
     }
 
-    setConfigValue(key as any, parsedValue as any)
+    setConfigValue(key as keyof CLIConfigData, parsedValue as CLIConfigData[keyof CLIConfigData])
     console.log(color.success(\`Set \${key} = \${value}\`))
   })
 
@@ -309,7 +309,7 @@ const deleteCommand = new Command('delete')
       process.exit(1)
     }
 
-    deleteConfigValue(key as any)
+    deleteConfigValue(key as keyof CLIConfigData)
     console.log(color.success(\`Deleted \${key}\`))
   })
 
@@ -357,7 +357,7 @@ configCommand
 /**
  * Generate output utility module
  */
-export function generateOutputModule(config: CLIConfig): string {
+export function generateOutputModule(_config: CLIConfig): string {
   return `/**
  * Output Formatting Utilities
  *

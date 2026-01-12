@@ -69,9 +69,6 @@ import type {
   TrendDataPoint,
   // Alerts
   Alert,
-  AlertType,
-  AlertSeverity,
-  AlertStatus,
   AlertListOptions,
   AlertListResult,
   AlertSummary,
@@ -91,7 +88,6 @@ import type {
   InsightsInterface,
   // Notifications
   NotificationChannel,
-  NotificationTrigger,
   NotificationRule,
   EmailNotificationConfig,
   SlackNotificationConfig,
@@ -151,7 +147,7 @@ function getDaysForPeriod(period: string): number {
 // METRICS IMPLEMENTATION
 // ============================================================================
 
-function createMetrics(config: StudioConfig): MetricsInterface {
+function createMetrics(_config: StudioConfig): MetricsInterface {
   // Base values for mock data
   const baseMrr = 125000 // $1,250 MRR
   const baseCustomers = 45
@@ -225,7 +221,7 @@ function createMetrics(config: StudioConfig): MetricsInterface {
 // CUSTOMERS IMPLEMENTATION
 // ============================================================================
 
-function createCustomers(config: StudioConfig): CustomersInterface {
+function createCustomers(_config: StudioConfig): CustomersInterface {
   // Mock customer data
   const mockCustomers: Customer[] = [
     {
@@ -369,14 +365,14 @@ function createCustomers(config: StudioConfig): CustomersInterface {
       return customer
     },
 
-    async upgrade(customerId: string, newPlanId: string): Promise<UpgradeResult> {
+    async upgrade(_customerId: string, newPlanId: string): Promise<UpgradeResult> {
       return {
         success: true,
         newPlanId,
       }
     },
 
-    async downgrade(customerId: string, newPlanId: string): Promise<DowngradeResult> {
+    async downgrade(_customerId: string, newPlanId: string): Promise<DowngradeResult> {
       return {
         success: true,
         newPlanId,
@@ -384,21 +380,21 @@ function createCustomers(config: StudioConfig): CustomersInterface {
       }
     },
 
-    async cancel(customerId: string, options: CancelOptions): Promise<CancelResult> {
+    async cancel(_customerId: string, options: CancelOptions): Promise<CancelResult> {
       return {
         success: true,
         cancelAt: options.immediately ? new Date() : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       }
     },
 
-    async reactivate(customerId: string): Promise<ReactivateResult> {
+    async reactivate(_customerId: string): Promise<ReactivateResult> {
       return {
         success: true,
         status: 'active',
       }
     },
 
-    async applyDiscount(customerId: string, options: ApplyDiscountOptions): Promise<ApplyDiscountResult> {
+    async applyDiscount(_customerId: string, options: ApplyDiscountOptions): Promise<ApplyDiscountResult> {
       return {
         success: true,
         discount: {
@@ -408,7 +404,7 @@ function createCustomers(config: StudioConfig): CustomersInterface {
       }
     },
 
-    async extendTrial(customerId: string, options: ExtendTrialOptions): Promise<ExtendTrialResult> {
+    async extendTrial(_customerId: string, options: ExtendTrialOptions): Promise<ExtendTrialResult> {
       return {
         success: true,
         newTrialEnd: new Date(Date.now() + (options.additionalDays + 14) * 24 * 60 * 60 * 1000),
@@ -421,7 +417,7 @@ function createCustomers(config: StudioConfig): CustomersInterface {
 // REVENUE IMPLEMENTATION
 // ============================================================================
 
-function createRevenue(config: StudioConfig): RevenueInterface {
+function createRevenue(_config: StudioConfig): RevenueInterface {
   const baseMrr = 125000
 
   return {
@@ -469,7 +465,7 @@ function createRevenue(config: StudioConfig): RevenueInterface {
       ]
     },
 
-    async getGrowthRate(options: TrendPeriodOptions): Promise<GrowthRate> {
+    async getGrowthRate(_options: TrendPeriodOptions): Promise<GrowthRate> {
       const previousPeriodRevenue = baseMrr * 0.9
       const currentPeriodRevenue = baseMrr
 
@@ -480,21 +476,21 @@ function createRevenue(config: StudioConfig): RevenueInterface {
       }
     },
 
-    async getExpansionRevenue(options: TrendPeriodOptions): Promise<ExpansionRevenue> {
+    async getExpansionRevenue(_options: TrendPeriodOptions): Promise<ExpansionRevenue> {
       return {
         upgrades: 8,
         expansionMrr: 15000,
       }
     },
 
-    async getContractionRevenue(options: TrendPeriodOptions): Promise<ContractionRevenue> {
+    async getContractionRevenue(_options: TrendPeriodOptions): Promise<ContractionRevenue> {
       return {
         downgrades: 3,
         contractionMrr: 5000,
       }
     },
 
-    async getCohortAnalysis(options: CohortAnalysisOptions): Promise<CohortData[]> {
+    async getCohortAnalysis(_options: CohortAnalysisOptions): Promise<CohortData[]> {
       return [
         { month: '2025-01', customers: 10, retentionByMonth: [100, 90, 85, 80, 78, 75] },
         { month: '2025-02', customers: 12, retentionByMonth: [100, 92, 88, 82, 80] },
@@ -511,9 +507,9 @@ function createRevenue(config: StudioConfig): RevenueInterface {
 // USAGE IMPLEMENTATION
 // ============================================================================
 
-function createUsage(config: StudioConfig): UsageInterface {
+function createUsage(_config: StudioConfig): UsageInterface {
   return {
-    async getApiUsage(options: TrendPeriodOptions): Promise<ApiUsageSummary> {
+    async getApiUsage(_options: TrendPeriodOptions): Promise<ApiUsageSummary> {
       const totalCalls = 150000
       const failedCalls = 1500
 
@@ -525,7 +521,7 @@ function createUsage(config: StudioConfig): UsageInterface {
       }
     },
 
-    async getByEndpoint(options: TrendPeriodOptions): Promise<UsageData[]> {
+    async getByEndpoint(_options: TrendPeriodOptions): Promise<UsageData[]> {
       return [
         { path: '/api/customers', method: 'GET', count: 45000, avgResponseTime: 120 },
         { path: '/api/customers', method: 'POST', count: 5000, avgResponseTime: 250 },
@@ -575,7 +571,7 @@ function createUsage(config: StudioConfig): UsageInterface {
       }
     },
 
-    async getCustomerUsage(customerId: string, options: TrendPeriodOptions): Promise<CustomerUsage> {
+    async getCustomerUsage(customerId: string, _options: TrendPeriodOptions): Promise<CustomerUsage> {
       return {
         customerId,
         apiCalls: 2500,
@@ -610,7 +606,7 @@ function createUsage(config: StudioConfig): UsageInterface {
 // TEAM IMPLEMENTATION
 // ============================================================================
 
-function createTeam(config: StudioConfig): TeamInterface {
+function createTeam(_config: StudioConfig): TeamInterface {
   const mockMembers: TeamMember[] = [
     { id: 'member_owner', email: 'owner@company.com', name: 'Owner', role: 'owner', joinedAt: new Date('2025-01-01') },
     { id: 'member_admin', email: 'admin@company.com', name: 'Admin', role: 'admin', joinedAt: new Date('2025-03-15') },
@@ -622,21 +618,21 @@ function createTeam(config: StudioConfig): TeamInterface {
       return mockMembers
     },
 
-    async invite(options: InviteMemberOptions): Promise<InviteResult> {
+    async invite(_options: InviteMemberOptions): Promise<InviteResult> {
       return {
         success: true,
         inviteId: `invite_${Date.now()}`,
       }
     },
 
-    async updateRole(memberId: string, newRole: TeamRole): Promise<UpdateRoleResult> {
+    async updateRole(_memberId: string, newRole: TeamRole): Promise<UpdateRoleResult> {
       return {
         success: true,
         newRole,
       }
     },
 
-    async remove(memberId: string): Promise<ActionResult> {
+    async remove(_memberId: string): Promise<ActionResult> {
       return {
         success: true,
       }
@@ -698,7 +694,7 @@ function createSettings(config: StudioConfig): SettingsInterface {
       }
     },
 
-    async update(options: UpdateSettingsOptions): Promise<ActionResult> {
+    async update(_options: UpdateSettingsOptions): Promise<ActionResult> {
       return { success: true }
     },
 
@@ -715,7 +711,7 @@ function createSettings(config: StudioConfig): SettingsInterface {
       }
     },
 
-    async updateBilling(options: UpdateBillingOptions): Promise<ActionResult> {
+    async updateBilling(_options: UpdateBillingOptions): Promise<ActionResult> {
       return { success: true }
     },
 
@@ -728,7 +724,7 @@ function createSettings(config: StudioConfig): SettingsInterface {
       }
     },
 
-    async updateNotifications(options: UpdateNotificationOptions): Promise<ActionResult> {
+    async updateNotifications(_options: UpdateNotificationOptions): Promise<ActionResult> {
       return { success: true }
     },
 
@@ -740,11 +736,11 @@ function createSettings(config: StudioConfig): SettingsInterface {
       ]
     },
 
-    async connectIntegration(name: string, integrationConfig: Record<string, unknown>): Promise<ActionResult> {
+    async connectIntegration(_name: string, _integrationConfig: Record<string, unknown>): Promise<ActionResult> {
       return { success: true }
     },
 
-    async disconnectIntegration(name: string): Promise<ActionResult> {
+    async disconnectIntegration(_name: string): Promise<ActionResult> {
       return { success: true }
     },
   }
@@ -754,7 +750,7 @@ function createSettings(config: StudioConfig): SettingsInterface {
 // ALERTS IMPLEMENTATION
 // ============================================================================
 
-function createAlerts(config: StudioConfig): AlertsInterface {
+function createAlerts(_config: StudioConfig): AlertsInterface {
   // Mock alert data
   const mockAlerts: Alert[] = [
     {
@@ -1019,15 +1015,15 @@ function createAlerts(config: StudioConfig): AlertsInterface {
       }
     },
 
-    async acknowledge(alertId: string, options?: AcknowledgeAlertOptions): Promise<ActionResult> {
+    async acknowledge(_alertId: string, _options?: AcknowledgeAlertOptions): Promise<ActionResult> {
       return { success: true }
     },
 
-    async snooze(alertId: string, options: SnoozeAlertOptions): Promise<ActionResult> {
+    async snooze(_alertId: string, _options: SnoozeAlertOptions): Promise<ActionResult> {
       return { success: true }
     },
 
-    async resolve(alertId: string, options?: ResolveAlertOptions): Promise<ActionResult> {
+    async resolve(_alertId: string, _options?: ResolveAlertOptions): Promise<ActionResult> {
       return { success: true }
     },
 
@@ -1049,7 +1045,7 @@ function createAlerts(config: StudioConfig): AlertsInterface {
 // INSIGHTS IMPLEMENTATION
 // ============================================================================
 
-function createInsights(config: StudioConfig): InsightsInterface {
+function createInsights(_config: StudioConfig): InsightsInterface {
   return {
     async getRevenueForecast(months: number): Promise<RevenueForecast[]> {
       const forecasts: RevenueForecast[] = []
@@ -1098,7 +1094,7 @@ function createInsights(config: StudioConfig): InsightsInterface {
       return forecasts
     },
 
-    async getEnhancedCohorts(options: CohortAnalysisOptions): Promise<EnhancedCohortData[]> {
+    async getEnhancedCohorts(_options: CohortAnalysisOptions): Promise<EnhancedCohortData[]> {
       return [
         {
           month: '2025-07',
@@ -1265,7 +1261,7 @@ function createInsights(config: StudioConfig): InsightsInterface {
       }
     },
 
-    async getEngagementMetrics(options: TrendPeriodOptions): Promise<EngagementMetrics> {
+    async getEngagementMetrics(_options: TrendPeriodOptions): Promise<EngagementMetrics> {
       return {
         dauPercent: 42,
         wauPercent: 68,
@@ -1290,7 +1286,7 @@ function createInsights(config: StudioConfig): InsightsInterface {
 // NOTIFICATIONS IMPLEMENTATION
 // ============================================================================
 
-function createNotifications(config: StudioConfig): NotificationsInterface {
+function createNotifications(_config: StudioConfig): NotificationsInterface {
   const mockRules: NotificationRule[] = [
     {
       id: 'rule_001',
@@ -1484,7 +1480,7 @@ function createNotifications(config: StudioConfig): NotificationsInterface {
       return filtered
     },
 
-    async send(channel: NotificationChannel, message: string, options?: { subject?: string }): Promise<ActionResult> {
+    async send(_channel: NotificationChannel, _message: string, _options?: { subject?: string }): Promise<ActionResult> {
       // In real implementation, this would send via the configured channel
       return { success: true }
     },

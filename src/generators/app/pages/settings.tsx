@@ -11,10 +11,10 @@ import { useTestContext } from '../test-utils'
 /**
  * Create a Settings page component
  */
-export function createSettingsPage(config: AppGeneratorConfig): ComponentType<unknown> {
+export function createSettingsPage(_config: AppGeneratorConfig): ComponentType<unknown> {
   return function SettingsPage() {
     const ctx = useTestContext()
-    const { data, mutations, user, checkPermission } = ctx
+    const { data, mutations, user, checkPermission: _checkPermission } = ctx
 
     const settings = data.settings as Record<string, unknown> | undefined
 

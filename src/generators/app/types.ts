@@ -5,7 +5,7 @@
  * React admin dashboard pages from noun/verb definitions.
  */
 
-import type { ComponentType, ReactNode } from 'react'
+import type { ComponentType } from 'react'
 
 /**
  * Field type definitions in the noun schema

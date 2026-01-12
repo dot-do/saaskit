@@ -16,7 +16,6 @@ import type {
   CLIRunner,
   CommandResult,
   ExecuteOptions,
-  FetchRequest,
   NounsConfig,
   VerbsConfig,
   ParsedNoun,
@@ -353,7 +352,7 @@ export function createCLIRunner(config: CLIConfig): CLIRunner {
 
 async function handleLogin(
   args: string[],
-  config: CLIConfig,
+  _config: CLIConfig,
   configDir: string,
   options: ExecuteOptions
 ): Promise<CommandResult> {
@@ -429,7 +428,7 @@ async function handleLogout(configDir: string): Promise<CommandResult> {
 
 async function handleConfig(
   args: string[],
-  config: CLIConfig,
+  _config: CLIConfig,
   configDir: string
 ): Promise<CommandResult> {
   if (args.length === 0) {
@@ -573,8 +572,8 @@ async function handleConfig(
 
 function handleCompletion(
   args: string[],
-  config: CLIConfig,
-  nouns: ParsedNoun[]
+  _config: CLIConfig,
+  _nouns: ParsedNoun[]
 ): CommandResult {
   if (args.length === 0) {
     return {
@@ -596,7 +595,7 @@ async function handleNounCommand(
   noun: ParsedNoun,
   args: string[],
   config: CLIConfig,
-  configDir: string,
+  _configDir: string,
   isAuthenticated: boolean,
   options: ExecuteOptions
 ): Promise<CommandResult> {
@@ -662,7 +661,7 @@ function validateNounCommand(
   noun: ParsedNoun,
   subcommand: string,
   args: string[],
-  config: CLIConfig
+  _config: CLIConfig
 ): CommandResult | null {
   // Commands that require an ID argument
   const requiresId = ['get', 'update', 'delete', ...noun.verbs]
@@ -700,7 +699,7 @@ function validateNounCommand(
 async function handleList(
   noun: ParsedNoun,
   args: string[],
-  config: CLIConfig,
+  _config: CLIConfig,
   options: ExecuteOptions
 ): Promise<CommandResult> {
   const query: Record<string, string> = {}
@@ -773,7 +772,7 @@ async function handleList(
 async function handleGet(
   noun: ParsedNoun,
   args: string[],
-  config: CLIConfig,
+  _config: CLIConfig,
   options: ExecuteOptions
 ): Promise<CommandResult> {
   // Find the id (first non-flag argument)
@@ -821,7 +820,7 @@ async function handleGet(
 async function handleCreate(
   noun: ParsedNoun,
   args: string[],
-  config: CLIConfig,
+  _config: CLIConfig,
   options: ExecuteOptions
 ): Promise<CommandResult> {
   const body: Record<string, unknown> = {}
@@ -891,7 +890,7 @@ async function handleCreate(
 async function handleUpdate(
   noun: ParsedNoun,
   args: string[],
-  config: CLIConfig,
+  _config: CLIConfig,
   options: ExecuteOptions
 ): Promise<CommandResult> {
   const id = args.find(a => !a.startsWith('-'))
@@ -950,7 +949,7 @@ async function handleUpdate(
 async function handleDelete(
   noun: ParsedNoun,
   args: string[],
-  config: CLIConfig,
+  _config: CLIConfig,
   options: ExecuteOptions
 ): Promise<CommandResult> {
   const id = args.find(a => !a.startsWith('-'))
@@ -999,7 +998,7 @@ async function handleVerb(
   noun: ParsedNoun,
   verb: string,
   args: string[],
-  config: CLIConfig,
+  _config: CLIConfig,
   options: ExecuteOptions
 ): Promise<CommandResult> {
   const id = args.find(a => !a.startsWith('-'))

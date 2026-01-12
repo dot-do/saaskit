@@ -5,7 +5,7 @@
  * Maps $.on.Noun.event patterns to Zapier triggers.
  */
 
-import type { ZapierTrigger, ZapierField, ZapierGeneratorOptions } from './types'
+import type { ZapierTrigger, ZapierField } from './types'
 import { toZapierKey, toDisplayLabel } from './types'
 
 /**
@@ -143,7 +143,8 @@ export function generateTrigger(options: GenerateTriggerOptions): ZapierTrigger 
 
   // Add webhook subscription endpoints for instant triggers
   if (isInstant && webhookBaseUrl) {
-    const webhookUrl = generateWebhookUrl(webhookBaseUrl, nounName, eventName)
+    // Generate webhook URL for documentation/debugging (may be used in future)
+    void generateWebhookUrl(webhookBaseUrl, nounName, eventName)
 
     trigger.operation.performSubscribe = {
       url: `${apiBaseUrl}/webhooks/subscribe`,

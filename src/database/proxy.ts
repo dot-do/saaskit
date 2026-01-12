@@ -11,7 +11,7 @@
  * adding database-specific features like initialization guards.
  */
 
-import { createCachedProxy, type CachedProxyResult } from '../utils/proxy-factory'
+import { createCachedProxy } from '../utils/proxy-factory'
 
 /**
  * Configuration for creating a database proxy
@@ -147,7 +147,7 @@ export function createDbProxy<TAccessor>(
 
   // Wrap the base proxy to add initialization checks on property access
   const proxy = new Proxy(baseProxy as Record<string, TAccessor | undefined>, {
-    get(target, prop: string | symbol): TAccessor | undefined {
+    get(_target, prop: string | symbol): TAccessor | undefined {
       if (typeof prop !== 'string') {
         return undefined
       }
@@ -174,7 +174,7 @@ export function createDbProxy<TAccessor>(
       return value
     },
 
-    has(target, prop: string | symbol): boolean {
+    has(_target, prop: string | symbol): boolean {
       if (typeof prop !== 'string') {
         return false
       }
@@ -193,7 +193,7 @@ export function createDbProxy<TAccessor>(
       return getNounNames ? getNounNames() : []
     },
 
-    getOwnPropertyDescriptor(target, prop: string | symbol): PropertyDescriptor | undefined {
+    getOwnPropertyDescriptor(_target, prop: string | symbol): PropertyDescriptor | undefined {
       if (typeof prop !== 'string') {
         return undefined
       }

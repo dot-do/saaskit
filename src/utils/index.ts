@@ -12,3 +12,5 @@ export {
   findSimilarKey,
   type CachedProxyOptions,
 } from './proxy-factory'
+
+export { loadOptionalDependency, tryLoadModule, type LoadResult } from './optional-dependency'

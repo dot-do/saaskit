@@ -15,11 +15,11 @@ import { isDestructiveVerb } from '../parser'
 export function createShowPage(
   noun: ParsedNoun,
   verbList: string[],
-  config: AppGeneratorConfig
+  _config: AppGeneratorConfig
 ): ComponentType<unknown> {
   return function ShowPage() {
     const ctx = useTestContext()
-    const { data, params, navigate, verbs: verbHandlers, user, checkPermission, hasCustomPermissionCheck } = ctx
+    const { data, params: _params, navigate, verbs: verbHandlers, user, checkPermission, hasCustomPermissionCheck } = ctx
 
     const nounData = data[noun.name] as {
       record?: Record<string, unknown>

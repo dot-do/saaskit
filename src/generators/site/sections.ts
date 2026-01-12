@@ -9,7 +9,7 @@
  */
 
 import type { SiteSection, GenerateSiteOptions, SiteConfig } from './types'
-import type { AppConfig, ResolvedApp } from '../../types'
+import type { AppConfig } from '../../types'
 import {
   VERB_ICON_MAP,
   DEFAULT_ICON,
@@ -73,7 +73,7 @@ export function getIconForVerbs(verbs: string[]): string {
  */
 export function generateHeroSection(
   config: ExtendedAppConfig,
-  options?: GenerateSiteOptions
+  _options?: GenerateSiteOptions
 ): SiteSection {
   const appName = config.name || 'App'
   const description = config.description || `Welcome to ${appName}`

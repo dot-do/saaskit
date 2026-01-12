@@ -130,7 +130,7 @@ export function createCachedProxy<TValue>(
     /**
      * Property getter - returns cached value or creates a new one
      */
-    get(target, prop: string | symbol): TValue | undefined {
+    get(_target, prop: string | symbol): TValue | undefined {
       if (typeof prop !== 'string') return undefined
 
       // Check cache first for efficiency
@@ -156,7 +156,7 @@ export function createCachedProxy<TValue>(
     /**
      * Support for 'in' operator: 'Customer' in proxy
      */
-    has(target, prop: string | symbol): boolean {
+    has(_target, prop: string | symbol): boolean {
       if (typeof prop !== 'string') return false
       return getValidKeys().has(prop)
     },
@@ -171,7 +171,7 @@ export function createCachedProxy<TValue>(
     /**
      * Required for ownKeys to work properly with Object.keys()
      */
-    getOwnPropertyDescriptor(target, prop: string | symbol): PropertyDescriptor | undefined {
+    getOwnPropertyDescriptor(_target, prop: string | symbol): PropertyDescriptor | undefined {
       if (typeof prop !== 'string') return undefined
 
       const keys = getValidKeys()
@@ -236,7 +236,7 @@ export function createUnboundedCachedProxy<TValue>(
   const cache = new Map<string, TValue>()
 
   return new Proxy({} as Record<string, TValue>, {
-    get(target, prop: string | symbol): TValue | undefined {
+    get(_target, prop: string | symbol): TValue | undefined {
       if (typeof prop !== 'string') return undefined
 
       const cached = cache.get(prop)

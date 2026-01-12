@@ -1,9 +1,8 @@
-import type { AppConfig, ResolvedApp, App } from '../types/app'
+import type { AppConfig, App } from '../types/app'
 import type { VerbsConfig } from '../types/verbs'
 import type { Relationship } from '../types/relationships'
 import type { ScheduleExpression, ScheduleBuilder } from '../types/context'
 import { ai, agent, agents, human } from '../ai'
-import type { Agent, AIOptions, AIPromise, AgentConfig, AgentResult, StreamResult } from '../ai'
 
 /**
  * Define a SaaS application with type-safe nouns, verbs, relationships, events, and schedules.

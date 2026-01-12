@@ -13,11 +13,11 @@ import { useTestContext } from '../test-utils'
  */
 export function createEditPage(
   noun: ParsedNoun,
-  config: AppGeneratorConfig
+  _config: AppGeneratorConfig
 ): ComponentType<unknown> {
   return function EditPage() {
     const ctx = useTestContext()
-    const { data, params, navigate, mutations, user, checkPermission } = ctx
+    const { data, params, navigate, mutations, user, checkPermission: _checkPermission } = ctx
 
     const nounData = data[noun.name] as {
       record?: Record<string, unknown>
@@ -28,7 +28,7 @@ export function createEditPage(
     const isLoading = nounData?.isLoading
 
     const [formData, setFormData] = useState<Record<string, unknown>>({})
-    const [errors, setErrors] = useState<Record<string, string>>({})
+    const [_errors, setErrors] = useState<Record<string, string>>({})
     const [submitting, setSubmitting] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
@@ -59,7 +59,7 @@ export function createEditPage(
           await updateFn(params.id, submitData)
         }
         navigate(`/${noun.pluralName}`)
-      } catch (error) {
+      } catch (_error) {
         setErrors({ _form: 'Failed to update record' })
       } finally {
         setSubmitting(false)

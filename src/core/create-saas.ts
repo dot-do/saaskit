@@ -19,6 +19,7 @@ import {
   mergeWithBuiltIn,
 } from './built-ins'
 import { createDbProxy as createDbProxyUtil } from '../database/proxy'
+import { isValidEmail } from '../utils/email-validator'
 
 /**
  * Options for createSaaS
@@ -122,13 +123,7 @@ function hashKey(key: string): string {
   return createHash('sha256').update(key).digest('hex')
 }
 
-/**
- * Validate email format
- */
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
-}
+// isValidEmail is now imported from '../utils/email-validator'
 
 /**
  * Validate URL format
@@ -448,7 +443,7 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
         store.delete(id)
       },
 
-      async list(options?: Record<string, unknown>) {
+      async list(_options?: Record<string, unknown>) {
         const results: Array<Record<string, unknown> & { id: string }> = []
         for (const [id, entity] of store) {
           results.push({ ...entity, id })
@@ -499,11 +494,11 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
    */
   function createOnProxy(): Record<string, Record<string, (handler: EventHandler) => void>> {
     return new Proxy({} as Record<string, Record<string, (handler: EventHandler) => void>>, {
-      get(target, nounProp: string) {
+      get(_target, nounProp: string) {
         if (typeof nounProp !== 'string') return undefined
 
         return new Proxy({} as Record<string, (handler: EventHandler) => void>, {
-          get(verbTarget, verbProp: string) {
+          get(_verbTarget, verbProp: string) {
             if (typeof verbProp !== 'string') return undefined
 
             return (handler: EventHandler) => {
@@ -524,11 +519,11 @@ export function createSaaS(options: CreateSaaSOptions = {}): SaaSInstance {
    */
   function createVerbsProxy(): Record<string, Record<string, (...args: unknown[]) => Promise<unknown>>> {
     return new Proxy({} as Record<string, Record<string, (...args: unknown[]) => Promise<unknown>>>, {
-      get(target, nounProp: string) {
+      get(_target, nounProp: string) {
         if (typeof nounProp !== 'string') return undefined
 
         return new Proxy({} as Record<string, (...args: unknown[]) => Promise<unknown>>, {
-          get(verbTarget, verbProp: string) {
+          get(_verbTarget, verbProp: string) {
             if (typeof verbProp !== 'string') return undefined
 
             return async (...args: unknown[]) => {

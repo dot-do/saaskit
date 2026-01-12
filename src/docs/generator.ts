@@ -42,16 +42,12 @@ import type {
   DocsPage,
   GeneratedDocs,
   APIEndpoint,
-  EndpointParameter,
-  ErrorResponse,
   WebhookEvent,
   SchemaField,
   NavItem,
   OpenAPISpec,
-  DocsPlugin,
   SDKQuickstart,
   SearchIndexEntry,
-  VersionInfo,
   ChangelogEntry,
 } from './types'
 

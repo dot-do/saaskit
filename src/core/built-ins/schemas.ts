@@ -9,6 +9,7 @@
 
 import type { NounSchema } from '../../parsers/noun-parser'
 import type { BuiltInNounConfig } from './types'
+import { validateEmail } from '../../utils/email-validator'
 
 // ============================================================================
 // User Schema
@@ -73,9 +74,9 @@ export const UserConfig: BuiltInNounConfig = {
       return 'Email is required'
     }
     if (data.email && typeof data.email === 'string') {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(data.email)) {
-        return 'Invalid email format'
+      const result = validateEmail(data.email)
+      if (!result.valid) {
+        return result.error || 'Invalid email format'
       }
     }
     if (data.role && !['admin', 'member', 'owner'].includes(data.role as string)) {
@@ -205,7 +206,7 @@ export const PlanSchema: NounSchema = {
 export const PlanConfig: BuiltInNounConfig = {
   schema: PlanSchema,
   verbs: [],
-  validate: (data, operation) => {
+  validate: (data, _operation) => {
     if (data.interval && !['month', 'year', 'one-time'].includes(data.interval as string)) {
       return `Invalid interval: "${data.interval}". Must be one of: month, year, one-time`
     }
@@ -338,7 +339,7 @@ export const WebhookSchema: NounSchema = {
 export const WebhookConfig: BuiltInNounConfig = {
   schema: WebhookSchema,
   verbs: ['test', 'disable'],
-  validate: (data, operation) => {
+  validate: (data, _operation) => {
     if (!data.url) {
       return 'URL is required'
     }

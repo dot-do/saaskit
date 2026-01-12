@@ -52,14 +52,9 @@ import type {
   UnsubscribeFn,
   VerbContext,
   APIKeyValidationResult,
-  NounDefinition,
   FieldType,
-  APIVersion,
-  DeprecationNotice,
-  BreakingChange,
   MiddlewareFn,
   PostHookFn,
-  MiddlewareContext,
 } from './types'
 
 export * from './types'
@@ -177,29 +172,19 @@ function validateField(value: unknown, expectedType: FieldType): boolean {
  * @param versionHeader - Optional header name to check for version
  * @returns The API version if found
  */
-function extractVersion(request: APIRequest, versionHeader?: string): APIVersion | undefined {
-  // Check header first
-  if (versionHeader && request.headers?.[versionHeader]) {
-    return request.headers[versionHeader] as APIVersion
-  }
+// Reserved for future API versioning support
+// function _extractVersion(request: APIRequest, versionHeader?: string): APIVersion | undefined {
+//   if (versionHeader && request.headers?.[versionHeader]) {
+//     return request.headers[versionHeader] as APIVersion
+//   }
+//   const pathMatch = request.path.match(/^\/(v\d+)\//)
+//   if (pathMatch) return pathMatch[1] as APIVersion
+//   return undefined
+// }
 
-  // Check path (e.g., /v1/todos)
-  const pathMatch = request.path.match(/^\/(v\d+)\//)
-  if (pathMatch) {
-    return pathMatch[1] as APIVersion
-  }
-
-  return undefined
-}
-
-/**
- * Strips version prefix from path if present
- * @param path - The URL path to strip
- * @returns The path without version prefix
- */
-function stripVersionFromPath(path: string): string {
-  return path.replace(/^\/v\d+/, '')
-}
+// function _stripVersionFromPath(path: string): string {
+//   return path.replace(/^\/v\d+/, '')
+// }
 
 // ============================================================================
 // In-Memory Storage
@@ -672,7 +657,6 @@ export function createAPIGenerator(config: APIGeneratorConfig): APIGenerator {
     }
 
     // Check public endpoints
-    const endpointKey = `${request.method} ${request.path}`
     if (authentication.publicEndpoints?.some(ep => {
       // Simple pattern matching
       const epParts = ep.split(' ')
@@ -785,75 +769,15 @@ export function createAPIGenerator(config: APIGeneratorConfig): APIGenerator {
    * @param version - Optional version to check
    * @returns Deprecation notice if deprecated
    */
-  function getDeprecation(endpointKey: string, version?: APIVersion): DeprecationNotice | undefined {
-    // Check endpoint-specific deprecation
-    if (deprecatedEndpoints[endpointKey]) {
-      return deprecatedEndpoints[endpointKey]
-    }
-
-    // Check version-level deprecation
-    if (version && versioning?.versions?.[version]?.deprecated) {
-      const versionConfig = versioning.versions[version]
-      return {
-        deprecated: true,
-        message: versionConfig.deprecationMessage || `API version ${version} is deprecated`,
-        sunsetDate: versionConfig.sunsetDate,
-      }
-    }
-
-    return undefined
-  }
-
-  /**
-   * Add deprecation headers to response
-   * @param headers - Headers object to modify
-   * @param deprecation - Deprecation notice
-   */
-  function addDeprecationHeaders(headers: Record<string, string>, deprecation: DeprecationNotice): void {
-    headers['Deprecation'] = 'true'
-    if (deprecation.sunsetDate) {
-      headers['Sunset'] = deprecation.sunsetDate
-    }
-    if (deprecation.alternative) {
-      headers['Link'] = `<${deprecation.alternative}>; rel="successor-version"`
-    }
-    if (deprecation.message) {
-      headers['X-Deprecation-Notice'] = deprecation.message
-    }
-  }
-
-  /**
-   * Run before middleware
-   * @param context - Middleware context
-   * @returns Final middleware result
-   */
-  async function runBeforeMiddleware(context: MiddlewareContext): Promise<{ continue: boolean; response?: APIResponse; context: MiddlewareContext }> {
-    let currentContext = context
-    for (const mw of beforeMiddleware) {
-      const result = await mw(currentContext)
-      if (!result.continue) {
-        return { continue: false, response: result.response, context: currentContext }
-      }
-      if (result.context) {
-        currentContext = { ...currentContext, ...result.context }
-      }
-    }
-    return { continue: true, context: currentContext }
-  }
-
-  /**
-   * Run after hooks
-   * @param context - Middleware context
-   * @param response - Initial response
-   * @returns Modified response
-   */
-  async function runAfterHooks(context: MiddlewareContext, response: APIResponse): Promise<APIResponse> {
-    let currentResponse = response
-    for (const hook of afterHooks) {
-      currentResponse = await hook(context, currentResponse)
-    }
-    return currentResponse
-  }
+  // Reserved for future deprecation/middleware support
+  // function _getDeprecation(endpointKey: string, version?: APIVersion): DeprecationNotice | undefined { ... }
+  // function _addDeprecationHeaders(headers: Record<string, string>, deprecation: DeprecationNotice): void { ... }
+  // async function _runBeforeMiddleware(context: MiddlewareContext): Promise<{ continue: boolean; response?: APIResponse; context: MiddlewareContext }> { ... }
+  // async function _runAfterHooks(context: MiddlewareContext, response: APIResponse): Promise<APIResponse> { ... }
+  void deprecatedEndpoints // Mark as intentionally unused for future support
+  void beforeMiddleware // Mark as intentionally unused for future support
+  void afterHooks // Mark as intentionally unused for future support
+  void versioning // Mark as intentionally unused for future support
 
   return {
     getEndpoint(method: string, pathPattern: string): RESTEndpoint | undefined {
@@ -1101,7 +1025,7 @@ export function createAPIGenerator(config: APIGeneratorConfig): APIGenerator {
               events.emit(eventName, updated)
 
               return { status: 200, body: updated, headers: baseHeaders }
-            } catch (err) {
+            } catch (_err) {
               return {
                 status: 500,
                 body: { error: 'Internal server error', code: 'INTERNAL_ERROR', requestId: request.headers?.['X-Request-ID'] },
@@ -1117,7 +1041,7 @@ export function createAPIGenerator(config: APIGeneratorConfig): APIGenerator {
               headers: baseHeaders,
             }
         }
-      } catch (err) {
+      } catch (_err) {
         return {
           status: 500,
           body: { error: 'Internal server error', code: 'INTERNAL_ERROR', requestId: request.headers?.['X-Request-ID'] },
@@ -1171,7 +1095,7 @@ export function createAPIGenerator(config: APIGeneratorConfig): APIGenerator {
         const data: Record<string, any> = {}
 
         for (const selection of parsed.selections) {
-          const { name, args, selections: fieldSelections } = selection
+          const { name, args, selections: _fieldSelections } = selection
 
           if (parsed.type === 'query') {
             // Find which noun this query is for

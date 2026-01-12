@@ -10,12 +10,8 @@ import type {
   MCPServerConfig,
   MCPServerInfo,
   MCPCapabilities,
-  MCPTool,
   MCPToolResult,
-  MCPResource,
-  MCPResourceTemplate,
   MCPResourceContent,
-  MCPPrompt,
   MCPPromptResult,
   MCPSamplingRequest,
   MCPStdioTransport,
@@ -227,7 +223,7 @@ function normalizeConfig(config: MCPGeneratorConfig): {
         verbs[noun] = {}
         for (const verb of verbList) {
           // Create a placeholder function for each verb
-          verbs[noun][verb] = async ($: any) => {
+          verbs[noun][verb] = async ($: { id?: string; input?: unknown }) => {
             return { success: true, verb, noun, id: $.id }
           }
         }

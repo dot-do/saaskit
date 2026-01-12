@@ -6,7 +6,7 @@
  * @module cli-generator/commands
  */
 
-import type { ParsedNoun, ParsedField, CLIConfig, OutputFormat } from './types'
+import type { ParsedNoun, CLIConfig } from './types'
 
 // ============================================================================
 // Utilities
@@ -134,7 +134,7 @@ export const loginCommand = new Command('login')
 /**
  * Generate the logout command code
  */
-export function generateLogoutCommand(config: CLIConfig): string {
+export function generateLogoutCommand(_config: CLIConfig): string {
   return `/**
  * Logout Command
  *
@@ -171,7 +171,7 @@ export const logoutCommand = new Command('logout')
 /**
  * Generate list command for a noun
  */
-export function generateListCommand(noun: ParsedNoun, config: CLIConfig): string {
+export function generateListCommand(noun: ParsedNoun, _config: CLIConfig): string {
   return `/**
  * List ${noun.pluralName}
  */
@@ -244,7 +244,7 @@ export const list${noun.name}Command = new Command('list')
 /**
  * Generate get command for a noun
  */
-export function generateGetCommand(noun: ParsedNoun, config: CLIConfig): string {
+export function generateGetCommand(noun: ParsedNoun, _config: CLIConfig): string {
   return `/**
  * Get ${noun.name} by ID
  */
@@ -293,7 +293,7 @@ export const get${noun.name}Command = new Command('get')
 /**
  * Generate create command for a noun
  */
-export function generateCreateCommand(noun: ParsedNoun, config: CLIConfig): string {
+export function generateCreateCommand(noun: ParsedNoun, _config: CLIConfig): string {
   const requiredFields = noun.fields.filter(f => !f.optional && f.name !== 'id')
   const optionalFields = noun.fields.filter(f => f.optional)
 
@@ -403,7 +403,7 @@ ${optionalFields.map(f => `
 /**
  * Generate update command for a noun
  */
-export function generateUpdateCommand(noun: ParsedNoun, config: CLIConfig): string {
+export function generateUpdateCommand(noun: ParsedNoun, _config: CLIConfig): string {
   const allFields = noun.fields.filter(f => f.name !== 'id')
 
   return `/**
@@ -471,7 +471,7 @@ ${allFields.map(f => `
 /**
  * Generate delete command for a noun
  */
-export function generateDeleteCommand(noun: ParsedNoun, config: CLIConfig): string {
+export function generateDeleteCommand(noun: ParsedNoun, _config: CLIConfig): string {
   return `/**
  * Delete ${noun.name}
  */
@@ -532,7 +532,7 @@ export const delete${noun.name}Command = new Command('delete')
 /**
  * Generate verb command for a noun
  */
-export function generateVerbCommand(noun: ParsedNoun, verb: string, config: CLIConfig): string {
+export function generateVerbCommand(noun: ParsedNoun, verb: string, _config: CLIConfig): string {
   return `/**
  * ${capitalize(verb)} ${noun.name}
  */
@@ -595,7 +595,7 @@ export const ${verb}${noun.name}Command = new Command('${verb}')
 /**
  * Generate noun command group (aggregates all CRUD and verb commands)
  */
-export function generateNounCommandGroup(noun: ParsedNoun, config: CLIConfig): string {
+export function generateNounCommandGroup(noun: ParsedNoun, _config: CLIConfig): string {
   return `/**
  * ${noun.name} Commands
  */

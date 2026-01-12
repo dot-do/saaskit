@@ -6,7 +6,7 @@
  * @module cli-generator/completions
  */
 
-import type { ParsedNoun, CLIConfig, ShellType, CommandInfo } from './types'
+import type { ParsedNoun, CLIConfig, ShellType } from './types'
 
 /**
  * Generate completion command code

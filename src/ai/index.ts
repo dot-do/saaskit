@@ -73,7 +73,7 @@ export interface HumanApproveOptions {
   defaultOnTimeout?: boolean
 }
 
-export interface HumanAskOptions<T = string> {
+export interface HumanAskOptions<_T = string> {
   validation?: { pattern: RegExp; message: string }
   choices?: string[]
   multiline?: boolean
@@ -302,7 +302,7 @@ export function agent(name: string, config: AgentConfig): void {
       }
     },
 
-    stream: (input: Record<string, unknown>): StreamResult => {
+    stream: (_input: Record<string, unknown>): StreamResult => {
       const words = ['The', 'agent', 'is', 'responding', 'to', 'your', 'request.']
       return createStreamResult(words)
     },
@@ -315,18 +315,18 @@ export function agent(name: string, config: AgentConfig): void {
  * Agents proxy - provides access to registered agents
  */
 export const agents: Record<string, Agent> = new Proxy({} as Record<string, Agent>, {
-  get(target, prop: string): Agent | undefined {
+  get(_target, prop: string): Agent | undefined {
     if (typeof prop !== 'string' || prop === 'then') return undefined
     return registeredAgents.get(prop)
   },
-  has(target, prop: string): boolean {
+  has(_target, prop: string): boolean {
     if (typeof prop !== 'string') return false
     return registeredAgents.has(prop)
   },
   ownKeys(): string[] {
     return Array.from(registeredAgents.keys())
   },
-  getOwnPropertyDescriptor(target, prop: string) {
+  getOwnPropertyDescriptor(_target, prop: string) {
     if (registeredAgents.has(prop)) {
       return {
         configurable: true,
@@ -354,9 +354,6 @@ function generateQueueId(): string {
  */
 function approve(message: string, options?: HumanApproveOptions): HumanApprovalPromise {
   const queueId = generateQueueId()
-
-  // Track if the promise has been handled to avoid unhandled rejection warnings
-  let hasBeenHandled = false
 
   const promise = new Promise<boolean>((resolve, reject) => {
     // Wrap reject to track if it's been handled
@@ -401,11 +398,9 @@ function approve(message: string, options?: HumanApproveOptions): HumanApprovalP
     }
   })
 
-  // Add a catch handler that marks the promise as handled
-  // This prevents unhandled rejection warnings for promises that are cancelled without being awaited
-  promise.catch(() => {
-    hasBeenHandled = true
-  })
+  // Add a catch handler to prevent unhandled rejection warnings
+  // for promises that are cancelled without being awaited
+  void promise.catch(() => {})
 
   // Attach queueId to the promise
   const result = promise as HumanApprovalPromise

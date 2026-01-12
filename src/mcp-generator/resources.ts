@@ -170,7 +170,7 @@ export class URIParameterValidator {
     const coercedParams: Record<string, unknown> = {}
 
     // Check all rules
-    for (const [name, rule] of this.rules.entries()) {
+    for (const [name, _rule] of this.rules.entries()) {
       const result = this.validateParameter(name, params[name])
       if (!result.valid) {
         errors.push(...result.errors)
@@ -364,7 +364,7 @@ export class ResourceReader {
   /**
    * Read a single item
    */
-  private readItem(noun: string, nounKey: string, id: string, uri: string): MCPResourceContent {
+  private readItem(noun: string, _nounKey: string, id: string, uri: string): MCPResourceContent {
     const item = this.store.get(noun, id)
 
     if (!item) {
@@ -390,7 +390,7 @@ export class ResourceReader {
    */
   private readCollection(
     noun: string,
-    nounKey: string,
+    _nounKey: string,
     query: Record<string, string>,
     uri: string
   ): MCPResourceContent {

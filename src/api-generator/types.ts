@@ -411,8 +411,7 @@ export interface APIRequest {
 
 export interface APIResponse {
   status: number
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  body: any
+  body: unknown
   headers: Record<string, string>
 }
 
@@ -462,8 +461,7 @@ export interface GraphQLRequest {
 }
 
 export interface GraphQLResponse {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data?: any
+  data?: Record<string, unknown>
   errors?: Array<{ message: string }>
 }
 
@@ -538,17 +536,12 @@ export interface VerbContext {
   input: unknown
   db: {
     [noun: string]: {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      get: (id: string) => Promise<any>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      update: (id: string, data: any) => Promise<any>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      create: (data: any) => Promise<any>
+      get: (id: string) => Promise<Record<string, unknown> | null>
+      update: (id: string, data: Record<string, unknown>) => Promise<Record<string, unknown> | undefined>
+      create: (data: Record<string, unknown>) => Promise<Record<string, unknown>>
       delete: (id: string) => Promise<void>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      list: (options?: { limit?: number; offset?: number }) => Promise<any[]>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      find: (filter: any) => Promise<any[]>
+      list: (options?: { limit?: number; offset?: number }) => Promise<Record<string, unknown>[]>
+      find: (filter: Record<string, unknown>) => Promise<Record<string, unknown>[]>
     }
   }
   apiKey?: APIKeyValidationResult
@@ -558,8 +551,7 @@ export interface VerbContext {
 // API Generator Interface
 // ============================================================================
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type SubscriptionCallback = (event: any) => void
+export type SubscriptionCallback = (event: Record<string, unknown>) => void
 export type UnsubscribeFn = () => void
 
 export interface SubscriptionOptions {

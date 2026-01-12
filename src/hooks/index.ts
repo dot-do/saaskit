@@ -4,7 +4,7 @@
  * React hooks for interacting with the SaaS backend.
  */
 
-import type { AppContext, ListOptions } from '../types/context'
+import type { ListOptions } from '../types/context'
 
 /**
  * Resource data returned by useResource hook
@@ -87,7 +87,7 @@ export interface UseResourceOptions extends ListOptions {
  */
 export function useResource<T extends { id: string }>(
   noun: string,
-  options: UseResourceOptions = {}
+  _options: UseResourceOptions = {}
 ): ResourceData<T> & ResourceMutations<T> {
   // TODO: Implement with TanStack Query
   // TODO: Connect to dotdo backend via app context
@@ -201,7 +201,7 @@ export interface UseRealtimeResult {
  * }
  * ```
  */
-export function useRealtime(options: UseRealtimeOptions = {}): UseRealtimeResult {
+export function useRealtime(_options: UseRealtimeOptions = {}): UseRealtimeResult {
   // TODO: Implement WebSocket/SSE connection
   // TODO: Implement event filtering
   // TODO: Implement reconnection logic
@@ -314,7 +314,7 @@ export function useAuth(): AuthState & AuthActions {
     isAuthenticated: false,
     error: null,
 
-    async signIn(email: string, password: string): Promise<AuthUser> {
+    async signIn(email: string, _password: string): Promise<AuthUser> {
       console.warn(`[saaskit] useAuth.signIn called for "${email}" - not connected to backend`)
       return {
         id: `user_${Date.now()}`,
@@ -324,7 +324,7 @@ export function useAuth(): AuthState & AuthActions {
       }
     },
 
-    async signUp(email: string, password: string, name?: string): Promise<AuthUser> {
+    async signUp(email: string, _password: string, name?: string): Promise<AuthUser> {
       console.warn(`[saaskit] useAuth.signUp called for "${email}" - not connected to backend`)
       return {
         id: `user_${Date.now()}`,
@@ -374,7 +374,7 @@ export function useAuth(): AuthState & AuthActions {
  * }
  * ```
  */
-export function usePermission(permission: string): boolean {
+export function usePermission(_permission: string): boolean {
   // TODO: Implement permission checking
   // For now, return false (no permission)
   return false

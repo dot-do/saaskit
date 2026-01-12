@@ -39,6 +39,7 @@ import type {
   PythonSDKConfig,
   GoSDKConfig,
 } from './types'
+import { tryLoadModule } from '../utils/optional-dependency'
 
 // ============================================================================
 // Types
@@ -192,9 +193,9 @@ export interface Publisher {
  * Write files to disk (Node.js environment)
  */
 async function writeFilesToDisk(files: GeneratedFiles, outputDir: string): Promise<void> {
-  // Dynamic import for Node.js fs/path
-  const fs = await import('fs').catch(() => null)
-  const path = await import('path').catch(() => null)
+  // Dynamic import for Node.js fs/path - using safe loader that only catches MODULE_NOT_FOUND
+  const fs = await tryLoadModule<typeof import('fs')>('fs')
+  const path = await tryLoadModule<typeof import('path')>('path')
 
   if (!fs || !path) {
     throw new Error('File system operations require Node.js environment')
@@ -216,7 +217,8 @@ async function writeFilesToDisk(files: GeneratedFiles, outputDir: string): Promi
  * Execute a shell command (Node.js environment)
  */
 async function exec(command: string, cwd?: string): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  const childProcess = await import('child_process').catch(() => null)
+  // Using safe loader that only catches MODULE_NOT_FOUND
+  const childProcess = await tryLoadModule<typeof import('child_process')>('child_process')
 
   if (!childProcess) {
     throw new Error('Shell execution requires Node.js environment')
@@ -227,7 +229,7 @@ async function exec(command: string, cwd?: string): Promise<{ stdout: string; st
       resolve({
         stdout: stdout.toString(),
         stderr: stderr.toString(),
-        exitCode: error ? (error as any).code || 1 : 0,
+        exitCode: error ? (error as { code?: number }).code ?? 1 : 0,
       })
     })
   })

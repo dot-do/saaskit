@@ -11,9 +11,8 @@ import type {
   ZapierAuthentication,
   ZapierTrigger,
   ZapierAction,
-  ZapierSearch,
 } from './types'
-import { toZapierKey, toDisplayLabel } from './types'
+import { toZapierKey } from './types'
 import { generateTriggersFromEvents, generateTriggersForNoun, triggersToRecord } from './triggers'
 import { generateActionsFromVerbs, generateActionsForNoun, actionsToRecord } from './actions'
 import { generateSearchesFromNouns, searchesToRecord, type NounSchemaField } from './searches'
@@ -287,7 +286,8 @@ module.exports = {
  * Generate package.json for a Zapier app
  */
 export function generateZapierPackageJson(app: ZapierApp): string {
-  const key = app.identity.key.replace(/-/g, '_')
+  // Reserved for future package naming enhancement
+  void app.identity.key.replace(/-/g, '_')
 
   return JSON.stringify(
     {

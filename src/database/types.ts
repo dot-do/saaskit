@@ -61,7 +61,7 @@ export interface BaseRecord {
 /**
  * Search result with relevance score
  */
-export interface SearchResult<T> extends BaseRecord {
+export interface SearchResult<_T> extends BaseRecord {
   _score: number
 }
 

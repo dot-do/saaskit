@@ -13,7 +13,7 @@ import { useTestContext } from '../test-utils'
  */
 export function createAppShell(
   nouns: ParsedNoun[],
-  config: AppGeneratorConfig
+  _config: AppGeneratorConfig
 ): ComponentType<unknown> {
   return function AppShell() {
     const ctx = useTestContext()

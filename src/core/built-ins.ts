@@ -11,7 +11,7 @@
  * - Metric: Analytics tracking
  */
 
-import type { NounSchema, FieldDefinition } from '../parsers/noun-parser'
+import type { NounSchema } from '../parsers/noun-parser'
 
 /**
  * Built-in noun names

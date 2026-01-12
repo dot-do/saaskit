@@ -188,7 +188,7 @@ function getCacheKey(app: ExtendedAppConfig): string {
 // Section Generators
 // ============================================================================
 
-function generateHeroSection(config: ExtendedAppConfig, options?: GenerateSiteOptions): SiteSection {
+function generateHeroSection(config: ExtendedAppConfig, _options?: GenerateSiteOptions): SiteSection {
   const appName = config.name || 'App'
   const description = config.description || `Welcome to ${appName}`
   const siteConfig = config.site?.hero
@@ -273,7 +273,7 @@ function generatePricingSection(config: ExtendedAppConfig): SiteSection {
 
   // If no plans defined, generate a default pricing structure
   if (!plans || Object.keys(plans).length === 0) {
-    const appName = config.name || 'App'
+    // const _appName = config.name || 'App'
     const defaultTiers = [
       {
         name: 'Free',
@@ -505,7 +505,7 @@ function createExportMethods(site: Omit<GeneratedSite, 'toReact' | 'toMDX' | 'to
       layout: site.layout,
       responsive: site.responsive,
     }, null, 2),
-    regenerateSection: async (sectionType: string) => {
+    regenerateSection: async (_sectionType: string) => {
       // Return a new site with the same structure
       return {
         ...site,
@@ -671,6 +671,12 @@ export class SiteGenerator {
   }
 
   build(): GeneratedSite {
+    // Reserved for future configuration support (suppress unused warnings)
+    void this._heroConfig
+    void this._featuresConfig
+    void this._pricingConfig
+    void this._theme
+
     // Generate base site
     const site = generateSite(this.app)
 

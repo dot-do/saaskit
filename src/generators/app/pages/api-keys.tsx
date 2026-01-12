@@ -11,7 +11,7 @@ import { useTestContext } from '../test-utils'
 /**
  * Create an API Keys page component
  */
-export function createAPIKeysPage(config: AppGeneratorConfig): ComponentType<unknown> {
+export function createAPIKeysPage(_config: AppGeneratorConfig): ComponentType<unknown> {
   return function APIKeysPage() {
     const ctx = useTestContext()
     const { data, mutations } = ctx

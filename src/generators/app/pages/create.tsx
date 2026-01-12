@@ -13,7 +13,7 @@ import { useTestContext } from '../test-utils'
  */
 export function createCreatePage(
   noun: ParsedNoun,
-  config: AppGeneratorConfig
+  _config: AppGeneratorConfig
 ): ComponentType<unknown> {
   return function CreatePage() {
     const ctx = useTestContext()
@@ -65,7 +65,7 @@ export function createCreatePage(
           await createFn(data)
         }
         navigate(`/${noun.pluralName}`)
-      } catch (error) {
+      } catch {
         setErrors({ _form: 'Failed to create record' })
       } finally {
         setSubmitting(false)
@@ -82,7 +82,7 @@ export function createCreatePage(
 
     for (const field of noun.fields) {
       const fieldId = `field-${field.name}`
-      const error = errors[field.name]
+      void errors[field.name] // Reserved for future error display
 
       // Label
       formFields.push(

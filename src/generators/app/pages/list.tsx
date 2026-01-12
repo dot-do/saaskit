@@ -7,7 +7,6 @@
 import { createElement, useState, type ComponentType, type ReactNode } from 'react'
 import type { ParsedNoun, AppGeneratorConfig } from '../types'
 import { useTestContext } from '../test-utils'
-import { isDestructiveVerb } from '../parser'
 
 /**
  * Create a List page component for a noun
@@ -15,11 +14,11 @@ import { isDestructiveVerb } from '../parser'
 export function createListPage(
   noun: ParsedNoun,
   verbList: string[],
-  config: AppGeneratorConfig
+  _config: AppGeneratorConfig
 ): ComponentType<unknown> {
   return function ListPage() {
     const ctx = useTestContext()
-    const { data, navigate, onSort, user, checkPermission, verbs: verbHandlers } = ctx
+    const { data, navigate, onSort, user, checkPermission: _checkPermission, verbs: verbHandlers } = ctx
     const [openActionsMenu, setOpenActionsMenu] = useState<string | null>(null)
 
     const nounData = data[noun.name] as {

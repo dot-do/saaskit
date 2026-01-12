@@ -145,7 +145,7 @@ export function AppProvider({
   }, [data])
 
   const defaultCheckPermission = useCallback(
-    (permission: string, context: { record: unknown }) => {
+    (permission: string, _context: { record: unknown }) => {
       if (!user) return true
       if (!user.permissions) return true
       return user.permissions.includes(permission)

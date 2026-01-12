@@ -826,7 +826,7 @@ MIT
 `
 }
 
-function generateSubscriptions(nouns: ParsedNoun[], config: SDKConfig): string {
+function generateSubscriptions(_nouns: ParsedNoun[], config: SDKConfig): string {
   const pkgName = getPackageName(config.packageName)
 
   return `// Package ${pkgName} provides WebSocket subscription support.

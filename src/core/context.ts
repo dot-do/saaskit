@@ -77,13 +77,13 @@ export interface ExtendedContext<T extends NounDefinitions = NounDefinitions> ex
 function createNounAccessor(noun: string): NounAccessor {
   return {
     create: (data: Record<string, unknown>) => Promise.resolve({ id: `${noun.toLowerCase()}_new`, ...data }),
-    get: (id: string) => Promise.resolve({ id }),
-    update: (id: string, data: Record<string, unknown>) => Promise.resolve({ id, ...data }),
-    delete: (id: string) => Promise.resolve(),
-    list: (options?: Record<string, unknown>) => Promise.resolve([]),
-    find: (query: Record<string, unknown>) => Promise.resolve([]),
-    search: (query: string) => Promise.resolve([]),
-    semanticSearch: (query: string) => Promise.resolve([]),
+    get: (_id: string) => Promise.resolve({ id: _id }),
+    update: (_id: string, data: Record<string, unknown>) => Promise.resolve({ id: _id, ...data }),
+    delete: (_id: string) => Promise.resolve(),
+    list: (_options?: Record<string, unknown>) => Promise.resolve([]),
+    find: (_query: Record<string, unknown>) => Promise.resolve([]),
+    search: (_query: string) => Promise.resolve([]),
+    semanticSearch: (_query: string) => Promise.resolve([]),
   }
 }
 
@@ -170,7 +170,7 @@ function createAgentsProxy(): Record<string, AgentDefinition & { run: (input: Re
         target[prop] = {
           instructions: '',
           tools: [],
-          run: (input: Record<string, unknown>) => Promise.resolve({ result: 'agent response' }),
+          run: (_input: Record<string, unknown>) => Promise.resolve({ result: 'agent response' }),
         }
       }
       return target[prop]
@@ -181,7 +181,7 @@ function createAgentsProxy(): Record<string, AgentDefinition & { run: (input: Re
       // Create agent with run method
       target[prop] = {
         ...value,
-        run: (input: Record<string, unknown>) => Promise.resolve({ result: 'agent response' }),
+        run: (_input: Record<string, unknown>) => Promise.resolve({ result: 'agent response' }),
       }
       return true
     },
@@ -193,9 +193,9 @@ function createAgentsProxy(): Record<string, AgentDefinition & { run: (input: Re
  */
 function createHumanHandlers() {
   return {
-    approve: (message: string, context?: Record<string, unknown>) => Promise.resolve(true),
-    ask: (question: string) => Promise.resolve(''),
-    review: (content: { content: string; type: string }) => Promise.resolve({ approved: true }),
+    approve: (_message: string, _context?: Record<string, unknown>) => Promise.resolve(true),
+    ask: (_question: string) => Promise.resolve(''),
+    review: (_content: { content: string; type: string }) => Promise.resolve({ approved: true }),
   }
 }
 
@@ -207,8 +207,8 @@ function createApiProxy(
   integrations: Map<string, StoredIntegration>,
   getFetch: () => FetchFunction
 ): Record<string, unknown> {
-  // Built-in Platform.do integrations
-  const builtInIntegrations = new Set(['emails', 'texts', 'calls', 'stripe'])
+  // Built-in Platform.do integrations (reserved for future use)
+  // const _builtInIntegrations = new Set(['emails', 'texts', 'calls', 'stripe'])
 
   // Platform.do base URLs
   const platformUrls: Record<string, string> = {
@@ -224,7 +224,7 @@ function createApiProxy(
   async function handleApiError(
     response: Response,
     serviceName: string,
-    fetchFn: FetchFunction
+    _fetchFn: FetchFunction
   ): Promise<never> {
     const capitalizedName = serviceName.charAt(0).toUpperCase() + serviceName.slice(1)
 
@@ -327,12 +327,12 @@ function createApiProxy(
    */
   function createStripeProxy(path: string[] = []): any {
     return new Proxy(() => {}, {
-      get(target, prop: string) {
+      get(_target, prop: string) {
         if (typeof prop !== 'string') return undefined
         // Build path for nested access
         return createStripeProxy([...path, prop])
       },
-      apply(target, thisArg, args) {
+      apply(_target, _thisArg, args) {
         // When called as a function, make the API request
         const methodName = path[path.length - 1]
         const pathStr = path.join('/')
@@ -425,7 +425,7 @@ function createApiProxy(
     return new Proxy(
       {},
       {
-        get(target, prop: string) {
+        get(_target, prop: string) {
           if (typeof prop !== 'string') return undefined
 
           if (prop === 'query') {
@@ -466,7 +466,7 @@ function createApiProxy(
     // This ensures typeof $.api.apollo === 'object'
     if (path.length === 0) {
       return new Proxy({} as Record<string, unknown>, {
-        get(target, prop: string) {
+        get(_target, prop: string) {
           if (typeof prop !== 'string') return undefined
           return createThirdPartyProxy(integration, [prop])
         },
@@ -475,11 +475,11 @@ function createApiProxy(
 
     // For nested paths, return a function proxy that can be called
     return new Proxy(() => {}, {
-      get(target, prop: string) {
+      get(_target, prop: string) {
         if (typeof prop !== 'string') return undefined
         return createThirdPartyProxy(integration, [...path, prop])
       },
-      apply(target, thisArg, args) {
+      apply(_target, _thisArg, args) {
         const pathStr = path.join('/')
         const url = `https://apis.do/${integration.name}/${pathStr}`
 
@@ -511,7 +511,7 @@ function createApiProxy(
   }
 
   return new Proxy({} as Record<string, unknown>, {
-    get(target, prop: string) {
+    get(_target, prop: string) {
       if (typeof prop !== 'string') return undefined
 
       // Built-in Platform.do integrations
@@ -552,11 +552,11 @@ function createApiProxy(
  */
 function createEnvProxy(): Record<string, string | undefined> {
   return new Proxy({} as Record<string, string | undefined>, {
-    get(target, prop: string) {
+    get(_target, prop: string) {
       if (typeof prop !== 'string') return undefined
       return process.env[prop]
     },
-    set(target, prop: string, value: unknown) {
+    set(_target, _prop: string, _value: unknown) {
       throw new Error('Cannot modify environment variables through $.env')
     },
   })
@@ -599,18 +599,18 @@ function createTimeHelpers(): TimeHelpers {
 /**
  * Create $.on event handler registration proxy
  */
-function createOnProxy(nouns: string[], verbs?: Record<string, string[]>): Record<string, Record<string, (handler: Function) => void>> {
+function createOnProxy(_nouns: string[], _verbs?: Record<string, string[]>): Record<string, Record<string, (handler: Function) => void>> {
   return new Proxy({} as Record<string, Record<string, (handler: Function) => void>>, {
-    get(target, nounProp: string) {
+    get(_target, nounProp: string) {
       if (typeof nounProp !== 'string') return undefined
 
       // Return a proxy for verb events
       return new Proxy({} as Record<string, (handler: Function) => void>, {
-        get(verbTarget, verbProp: string) {
+        get(_verbTarget, verbProp: string) {
           if (typeof verbProp !== 'string') return undefined
 
           // Return handler registration function
-          return (handler: Function) => {
+          return (_handler: Function) => {
             // Register the handler (noop in stub implementation)
           }
         },
@@ -638,7 +638,7 @@ function createEveryProxy(): Record<string, unknown> {
         // Handle at6am, at9am etc.
         const match = prop.match(/^at(\d+)(am|pm)?$/)
         if (match) {
-          return (handler?: Function) => {
+          return (_handler?: Function) => {
             const hour = parseInt(match[1], 10)
             const time = `${hour}${match[2] || 'am'}`
             return { __type: 'schedule', day: dayName, time }
@@ -732,7 +732,7 @@ export function createContext<T extends NounDefinitions = NounDefinitions>(
     // Validate no unknown keys
     const configKeys = Object.keys(integrationConfig)
     for (const key of configKeys) {
-      if (!VALID_CONFIG_KEYS.includes(key as any)) {
+      if (!(VALID_CONFIG_KEYS as readonly string[]).includes(key)) {
         throw new Error(`Unknown config key "${key}" for integration "${name}"`)
       }
     }
@@ -768,13 +768,13 @@ export function createContext<T extends NounDefinitions = NounDefinitions>(
   // Use Object.defineProperty for proper getter behavior on the context object
   const context = {
     // Fire and forget (durable)
-    send: (event: string, data?: Record<string, unknown>) => {
+    send: (_event: string, _data?: Record<string, unknown>) => {
       // Noop - fire and forget returns void
       return undefined
     },
 
     // Wait for result (durable)
-    do: (action: string, data?: Record<string, unknown>) => {
+    do: (_action: string, _data?: Record<string, unknown>) => {
       return Promise.resolve({})
     },
 

@@ -145,7 +145,7 @@ export const DEFAULT_MODEL = 'gpt-4-turbo'
  * })
  * ```
  */
-export function selectModel(task: string, options?: ModelSelectionOptions): ModelConfig {
+export function selectModel(_task: string, options?: ModelSelectionOptions): ModelConfig {
   // If a specific model is requested, use it
   if (options?.model && DEFAULT_MODELS[options.model]) {
     return DEFAULT_MODELS[options.model]

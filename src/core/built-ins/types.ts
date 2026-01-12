@@ -7,8 +7,7 @@
  * @module core/built-ins/types
  */
 
-import type { NounSchema, FieldDefinition, ParsedFieldType } from '../../parsers/noun-parser'
-import type { ParsedRelation } from '../../parsers/relationship-parser'
+import type { NounSchema } from '../../parsers/noun-parser'
 
 /**
  * Names of all built-in nouns provided by SaaSKit.

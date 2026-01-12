@@ -517,7 +517,7 @@ export class InteractivePrompt {
    * Prompt for multiple selections
    */
   async multiSelect<T = string>(options: MultiSelectPromptOptions<T>): Promise<T[]> {
-    const { choices, default: defaultValue = [], min = 0, max = choices.length } = options
+    const { choices, default: defaultValue = [], min: _min = 0, max: _max = choices.length } = options
 
     if (this.promptFn) {
       // Note: Would need extended prompt function for multi-select

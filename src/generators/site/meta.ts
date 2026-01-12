@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-import type { SiteMeta, SiteConfig } from './types'
+import type { SiteMeta } from './types'
 import type { ExtendedAppConfig } from './sections'
 
 // ============================================================================

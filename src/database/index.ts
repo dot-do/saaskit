@@ -51,7 +51,6 @@ export * from './accessor-factory'
 import type {
   NounDefinitions,
   NounSchema,
-  FieldDefinition,
   BaseRecord,
   SaaSContext,
 } from './types'
@@ -69,7 +68,7 @@ import { createAccessor, createRelationResolver, parseFieldDefinition } from './
  *
  * @internal
  */
-const RELATIONSHIP_OPERATORS = ['->', '~>', '<-', '<~'] as const
+// Relationship operators for future field parsing: '->' forward, '~>' fuzzy, '<-' backward, '<~' fuzzy backward
 
 /**
  * Validate noun definitions for relationship integrity

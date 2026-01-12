@@ -27,6 +27,7 @@
  */
 
 import type { TypeScriptError } from './types'
+import { safeEval, UnsafeExpressionError } from './safe-eval'
 
 /**
  * Source location with file, line, and column
@@ -699,12 +700,14 @@ export class DebugSession {
     // Check condition if present
     if (bp.condition && context) {
       try {
-        // Simplified condition evaluation
-        const evalCondition = new Function(...Object.keys(context), `return ${bp.condition}`)
-        if (!evalCondition(...Object.values(context))) {
+        const result = safeEval(bp.condition, context)
+        if (!result) {
           return
         }
-      } catch {
+      } catch (error) {
+        if (error instanceof UnsafeExpressionError) {
+          console.warn(`[debug] Blocked unsafe breakpoint condition: ${bp.condition}`)
+        }
         // Condition evaluation failed, skip
         return
       }

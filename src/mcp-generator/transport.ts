@@ -8,8 +8,6 @@ import type {
   MCPStdioTransport,
   MCPJSONRPCMessage,
   MCPGenerator,
-  MCPServerInfo,
-  MCPCapabilities,
 } from './types'
 
 /**
@@ -59,8 +57,8 @@ function successResponse(id: number | string | undefined, result: unknown): MCPJ
 export class StdioTransport implements MCPStdioTransport {
   private generator: MCPGenerator
   private initialized = false
-  private clientInfo: { name: string; version: string } | null = null
-  private running = false
+  private _clientInfo: { name: string; version: string } | null = null
+  private _running = false
 
   constructor(generator: MCPGenerator) {
     this.generator = generator
@@ -126,7 +124,7 @@ export class StdioTransport implements MCPStdioTransport {
     id: number | string | undefined,
     params: InitializeParams
   ): Promise<MCPJSONRPCMessage> {
-    this.clientInfo = params.clientInfo
+    this._clientInfo = params.clientInfo
     this.initialized = true
 
     const serverInfo = this.generator.getServerInfo()
@@ -225,7 +223,7 @@ export class StdioTransport implements MCPStdioTransport {
    * Start the transport (begin reading from stdin)
    */
   start(): void {
-    this.running = true
+    this._running = true
 
     // In a real implementation, this would set up stdin/stdout handlers
     // For now, we just mark it as running
@@ -262,7 +260,7 @@ export class StdioTransport implements MCPStdioTransport {
           process.stdout.write(output)
         }
       }
-    } catch (error) {
+    } catch (_error) {
       const errorResp = errorResponse(
         undefined,
         JSONRPC_ERRORS.PARSE_ERROR,
@@ -279,7 +277,21 @@ export class StdioTransport implements MCPStdioTransport {
    * Close the transport
    */
   close(): void {
-    this.running = false
+    this._running = false
+  }
+
+  /**
+   * Check if the transport is running
+   */
+  isRunning(): boolean {
+    return this._running
+  }
+
+  /**
+   * Get client info from initialization
+   */
+  getClientInfo(): { name: string; version: string } | null {
+    return this._clientInfo
   }
 }
 

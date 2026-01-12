@@ -4,14 +4,14 @@
  * Creates a team management page with user list, invite, and role management.
  */
 
-import { createElement, useState, type ComponentType, type ReactNode, type ChangeEvent, type FormEvent } from 'react'
+import { createElement, useState, type ComponentType, type ReactNode, type ChangeEvent } from 'react'
 import type { AppGeneratorConfig } from '../types'
 import { useTestContext } from '../test-utils'
 
 /**
  * Create a Team page component
  */
-export function createTeamPage(config: AppGeneratorConfig): ComponentType<unknown> {
+export function createTeamPage(_config: AppGeneratorConfig): ComponentType<unknown> {
   return function TeamPage() {
     const ctx = useTestContext()
     const { data, mutations, user } = ctx

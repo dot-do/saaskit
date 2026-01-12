@@ -59,7 +59,7 @@ export function generateAnalyzePrompt(noun: string): MCPPrompt {
 /**
  * Generate CRUD guide workflow prompt for a noun
  */
-export function generateCRUDGuidePrompt(noun: string, fields: Record<string, string>): MCPPrompt {
+export function generateCRUDGuidePrompt(noun: string, _fields: Record<string, string>): MCPPrompt {
   const nounKey = toMCPKey(noun)
   const nounLower = noun.toLowerCase()
 
@@ -485,7 +485,7 @@ Consider:
 
   private buildCRUDGuideText(
     noun: string,
-    nounLower: string,
+    _nounLower: string,
     fields: Record<string, string>,
     operation?: string
   ): string {
@@ -514,7 +514,7 @@ Please provide:
 
   private buildDataAnalysisText(
     noun: string,
-    nounLower: string,
+    _nounLower: string,
     items: Record<string, unknown>[],
     focus?: string,
     format?: string
@@ -540,12 +540,13 @@ Output format: ${outputFormat}`
 
   private buildBulkOperationsText(
     noun: string,
-    nounLower: string,
+    _nounLower: string,
     items: Record<string, unknown>[],
     action?: string,
     criteria?: string
   ): string {
-    const parsedCriteria = criteria ? JSON.parse(criteria) : null
+    // parsedCriteria reserved for future filter enhancement
+    void (criteria ? JSON.parse(criteria) : null)
 
     return `# Bulk Operations: ${noun}
 
@@ -565,7 +566,7 @@ Please provide:
 
   private buildDataMigrationText(
     noun: string,
-    nounLower: string,
+    _nounLower: string,
     fields: Record<string, string>,
     items: Record<string, unknown>[],
     direction?: string,
@@ -595,7 +596,7 @@ Please provide:
 
   private buildTroubleshootText(
     noun: string,
-    nounLower: string,
+    _nounLower: string,
     items: Record<string, unknown>[],
     issue?: string,
     context?: string
@@ -620,7 +621,7 @@ Please help diagnose:
 
   private buildReportText(
     noun: string,
-    nounLower: string,
+    _nounLower: string,
     items: Record<string, unknown>[],
     reportType?: string,
     timeRange?: string

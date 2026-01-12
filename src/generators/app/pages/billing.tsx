@@ -4,14 +4,14 @@
  * Creates a billing page with subscription info, usage, and invoices.
  */
 
-import { createElement, useState, type ComponentType, type ReactNode } from 'react'
+import { createElement, type ComponentType, type ReactNode } from 'react'
 import type { AppGeneratorConfig } from '../types'
 import { useTestContext } from '../test-utils'
 
 /**
  * Create a Billing page component
  */
-export function createBillingPage(config: AppGeneratorConfig): ComponentType<unknown> {
+export function createBillingPage(_config: AppGeneratorConfig): ComponentType<unknown> {
   return function BillingPage() {
     const ctx = useTestContext()
     const { data, mutations, user } = ctx
@@ -50,7 +50,7 @@ export function createBillingPage(config: AppGeneratorConfig): ComponentType<unk
     const handleManageBilling = async () => {
       const createPortalFn = mutations?.billing?.createPortalSession
       if (createPortalFn) {
-        const result = await createPortalFn()
+        await createPortalFn()
         // In real implementation, would redirect to the URL
       }
     }

@@ -14,9 +14,9 @@
  * - Progress indicators and spinners
  */
 
-import { existsSync, mkdirSync, writeFileSync, readFileSync, watch, rmSync } from 'fs'
-import { join, relative, basename } from 'path'
-import { execSync, spawn, type ChildProcess } from 'child_process'
+import { existsSync, mkdirSync, writeFileSync, readFileSync, watch } from 'fs'
+import { join } from 'path'
+import { execSync } from 'child_process'
 import { createServer, type Server } from 'http'
 import type {
   InitOptions,
@@ -357,7 +357,7 @@ export async function dev(options: DevOptions): Promise<DevResult> {
   }
 
   // Set up file watcher
-  const watcher = watch(directory, { recursive: true }, (eventType, filename) => {
+  const watcher = watch(directory, { recursive: true }, (_eventType, filename) => {
     if (!filename) return
 
     // Ignore node_modules, .git, dist directories, and internal marker files
@@ -388,7 +388,7 @@ export async function dev(options: DevOptions): Promise<DevResult> {
 
   // Parse app.tsx to find nouns and verbs (simplified)
   let nouns: string[] = []
-  let verbs: Record<string, string[]> = {}
+  const verbs: Record<string, string[]> = {}
 
   try {
     const appPath = join(directory, 'app.tsx')

@@ -106,8 +106,8 @@ function generateTypes(nouns: ParsedNoun[], config: SDKConfig): string {
     }
   }
 
-  // Union type for all events
-  const eventTypes = nouns.flatMap(noun => {
+  // Union type for all events - reserved for future event type union generation
+  void nouns.flatMap(noun => {
     const baseEvents = [
       `${noun.name}CreatedEvent`,
       `${noun.name}UpdatedEvent`,
@@ -823,7 +823,7 @@ function createDefaultLogger(level: LoggingConfig['level'] = 'info'): Logger {
  * HTTP client with retry logic, circuit breaker, and error handling
  */
 export class HttpClient {
-  private readonly apiKey: string;
+  private apiKey: string;
   private readonly baseUrl: string;
   private readonly timeout: number;
   private readonly retryConfig: Required<RetryConfig>;
@@ -1072,6 +1072,20 @@ export class HttpClient {
    */
   getCircuitState(): CircuitState {
     return this.circuitBreaker.getState();
+  }
+
+  /**
+   * Update the API key
+   */
+  setApiKey(apiKey: string): void {
+    this.apiKey = apiKey;
+  }
+
+  /**
+   * Get the current API key
+   */
+  getApiKey(): string {
+    return this.apiKey;
   }
 }
 `
@@ -1569,8 +1583,8 @@ ${verbMethods}
 // ============================================================================
 
 function generateClient(nouns: ParsedNoun[], config: SDKConfig): string {
-  const resourceImports = nouns.map(n => `${n.name}sResource`).join(', ')
-  const resourceFiles = nouns.map(n => n.pluralName)
+  // Reserved for future file-based resource imports
+  void nouns.map(n => n.pluralName)
 
   const resourceProperties = nouns.map(n => {
     const propName = toCamelCase(n.pluralName)
@@ -1657,7 +1671,7 @@ ${resourceInitializations}
    */
   setApiKey(apiKey: string): void {
     this._apiKey = apiKey;
-    (this.http as any).apiKey = apiKey;
+    this.http.setApiKey(apiKey);
   }
 
   /**
@@ -1676,7 +1690,7 @@ ${resourceInitializations}
     if (!this.subscriptions) {
       this.subscriptions = new SubscriptionClient(
         DEFAULT_BASE_URL,
-        (this.http as any).apiKey
+        this.http.getApiKey()
       );
       this.subscriptions.connect();
     }

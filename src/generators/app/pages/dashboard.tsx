@@ -4,8 +4,8 @@
  * Creates a dashboard page with metrics, quick actions, and real-time status.
  */
 
-import { createElement, useState, useEffect, type ComponentType, type ReactNode } from 'react'
-import type { ParsedNoun, VerbsConfig } from '../types'
+import { createElement, type ComponentType, type ReactNode } from 'react'
+import type { ParsedNoun } from '../types'
 import { useTestContext } from '../test-utils'
 
 /**
@@ -13,7 +13,7 @@ import { useTestContext } from '../test-utils'
  */
 export function createDashboardPage(
   nouns: ParsedNoun[],
-  verbs?: VerbsConfig
+  _verbs?: unknown
 ): ComponentType<unknown> {
   return function DashboardPage() {
     const ctx = useTestContext()
