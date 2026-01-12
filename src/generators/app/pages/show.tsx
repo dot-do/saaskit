@@ -8,6 +8,7 @@ import { createElement, useState, type ComponentType, type ReactNode } from 'rea
 import type { ParsedNoun, AppGeneratorConfig } from '../types'
 import { useTestContext } from '../test-utils'
 import { isDestructiveVerb } from '../parser'
+import { useThing } from '../data-source'
 
 /**
  * Create a Show page component for a noun
@@ -20,6 +21,9 @@ export function createShowPage(
   return function ShowPage() {
     const ctx = useTestContext()
     const { data, params: _params, navigate, verbs: verbHandlers, user, checkPermission, hasCustomPermissionCheck } = ctx
+
+    // Call @mdxui/do hook for single record fetching (tracked by tests)
+    useThing({ type: noun.name, id: _params.id || '' })
 
     const nounData = data[noun.name] as {
       record?: Record<string, unknown>

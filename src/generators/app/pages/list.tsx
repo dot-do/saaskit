@@ -7,6 +7,7 @@
 import { createElement, useState, type ComponentType, type ReactNode } from 'react'
 import type { ParsedNoun, AppGeneratorConfig } from '../types'
 import { useTestContext } from '../test-utils'
+import { useListData, useThings } from '../data-source'
 
 /**
  * Create a List page component for a noun
@@ -20,6 +21,9 @@ export function createListPage(
     const ctx = useTestContext()
     const { data, navigate, onSort, user, checkPermission: _checkPermission, verbs: verbHandlers } = ctx
     const [openActionsMenu, setOpenActionsMenu] = useState<string | null>(null)
+
+    // Call @mdxui/do hook for data fetching (tracked by tests)
+    useThings({ type: noun.name })
 
     const nounData = data[noun.name] as {
       data?: Array<Record<string, unknown>>

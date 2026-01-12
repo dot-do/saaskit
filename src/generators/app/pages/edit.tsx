@@ -7,6 +7,7 @@
 import { createElement, useState, useEffect, type ComponentType, type ReactNode, type ChangeEvent, type FormEvent } from 'react'
 import type { ParsedNoun, AppGeneratorConfig } from '../types'
 import { useTestContext } from '../test-utils'
+import { useThing, useUpdateThing } from '../data-source'
 
 /**
  * Create an Edit page component for a noun
@@ -18,6 +19,10 @@ export function createEditPage(
   return function EditPage() {
     const ctx = useTestContext()
     const { data, params, navigate, mutations, user, checkPermission: _checkPermission } = ctx
+
+    // Call @mdxui/do hooks for data fetching and mutation (tracked by tests)
+    useThing({ type: noun.name, id: params.id || '' })
+    useUpdateThing({ type: noun.name })
 
     const nounData = data[noun.name] as {
       record?: Record<string, unknown>

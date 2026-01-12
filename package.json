@@ -55,6 +55,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "lint": "npx eslint src/",
+    "lint:fix": "npx eslint src/ --fix",
     "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build",
     "clean": "rm -rf .turbo node_modules dist"
   },
@@ -63,17 +65,25 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.1",
     "@types/react": "^19.0.4",
+    "eslint": "^9.39.2",
     "jsdom": "^26.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.50.0",
     "vitest": "^4.0.16"
   },
   "peerDependencies": {
-    "react": "^18.0.0 || ^19.0.0"
+    "react": "^18.0.0 || ^19.0.0",
+    "@mdxui/do": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@mdxui/do": {
+      "optional": true
+    }
   },
   "optionalDependencies": {
-    "@dotdo/react": "^1.0.0",
-    "@dotdo/client": "^0.3.0"
+    "@dotdo/client": "^0.3.0",
+    "@dotdo/react": "^1.0.0"
   }
 }

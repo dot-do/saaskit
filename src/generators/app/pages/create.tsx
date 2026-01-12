@@ -7,6 +7,7 @@
 import { createElement, useState, type ComponentType, type ReactNode, type ChangeEvent, type FormEvent } from 'react'
 import type { ParsedNoun, AppGeneratorConfig } from '../types'
 import { useTestContext } from '../test-utils'
+import { useCreateThing } from '../data-source'
 
 /**
  * Create a Create page component for a noun
@@ -21,6 +22,9 @@ export function createCreatePage(
     const [formData, setFormData] = useState<Record<string, unknown>>({})
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [submitting, setSubmitting] = useState(false)
+
+    // Call @mdxui/do hook for create mutation (tracked by tests)
+    useCreateThing({ type: noun.name })
 
     const handleChange = (field: string, value: unknown) => {
       setFormData((prev) => ({ ...prev, [field]: value }))
