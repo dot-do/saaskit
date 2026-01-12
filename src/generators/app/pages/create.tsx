@@ -2,12 +2,17 @@
  * Create Page Generator
  *
  * Creates a form page for creating new records.
+ * Uses @mdxui/admin SimpleForm for consistent admin UI.
  */
 
-import { createElement, useState, type ComponentType, type ReactNode, type ChangeEvent, type FormEvent } from 'react'
+import { useState, type ComponentType } from 'react'
 import type { ParsedNoun, AppGeneratorConfig } from '../types'
 import { useTestContext } from '../test-utils'
 import { useCreateThing } from '../data-source'
+// @mdxui/admin components
+import { SimpleForm, TextInput, NumberInput, SelectInput, BooleanInput, FormToolbar } from '@mdxui/admin'
+// @mdxui/primitives components
+import { Button } from '@mdxui/primitives'
 
 /**
  * Create a Create page component for a noun
@@ -38,16 +43,14 @@ export function createCreatePage(
       }
     }
 
-    const handleSubmit = async (e: FormEvent) => {
-      e.preventDefault()
-
+    const handleSubmit = async (data: Record<string, unknown>) => {
       const createFn = mutations?.[noun.name]?.create
 
       // Only validate if no mutation handler (client-side validation for demo)
       if (!createFn) {
         // Check if any required fields are empty
         const hasEmptyRequired = noun.fields.some(
-          (field) => !field.optional && !formData[field.name]
+          (field) => !field.optional && !data[field.name]
         )
 
         if (hasEmptyRequired) {
@@ -60,13 +63,13 @@ export function createCreatePage(
       try {
         if (createFn) {
           // Convert number fields
-          const data = { ...formData }
+          const processedData = { ...data }
           for (const field of noun.fields) {
-            if (field.type === 'number' && data[field.name]) {
-              data[field.name] = parseFloat(data[field.name] as string)
+            if (field.type === 'number' && processedData[field.name]) {
+              processedData[field.name] = parseFloat(processedData[field.name] as string)
             }
           }
-          await createFn(data)
+          await createFn(processedData)
         }
         navigate(`/${noun.pluralName}`)
       } catch {
@@ -76,122 +79,71 @@ export function createCreatePage(
       }
     }
 
-    const children: ReactNode[] = []
+    // Render input component based on field type
+    const renderInput = (field: ParsedNoun['fields'][0]) => {
+      const commonProps = {
+        key: `input-${field.name}`,
+        source: field.name,
+        label: field.name,
+        value: formData[field.name],
+        onChange: (value: unknown) => handleChange(field.name, value),
+        required: !field.optional,
+      }
 
-    // Title
-    children.push(createElement('h1', { key: 'title' }, `Create ${noun.name}`))
-
-    // Form fields
-    const formFields: ReactNode[] = []
-
-    for (const field of noun.fields) {
-      const fieldId = `field-${field.name}`
-      void errors[field.name] // Reserved for future error display
-
-      // Label
-      formFields.push(
-        createElement('label', { key: `label-${field.name}`, htmlFor: fieldId }, field.name)
-      )
-
-      // Input based on field type
       if (field.type === 'union' && field.options) {
-        // Select for union types
-        formFields.push(
-          createElement(
-            'select',
-            {
-              key: `input-${field.name}`,
-              id: fieldId,
-              'aria-label': field.name,
-              value: (formData[field.name] as string) || '',
-              onChange: (e: ChangeEvent<HTMLSelectElement>) =>
-                handleChange(field.name, e.target.value),
-            },
-            [
-              createElement('option', { key: 'empty', value: '' }, '-- Select --'),
-              ...field.options.map((opt) =>
-                createElement('option', { key: opt, value: opt }, opt)
-              ),
-            ]
-          )
-        )
-      } else if (field.type === 'relation') {
-        // Relation selector (simplified as select)
-        formFields.push(
-          createElement('select', {
-            key: `input-${field.name}`,
-            id: fieldId,
-            'aria-label': field.name,
-            value: (formData[field.name] as string) || '',
-            onChange: (e: ChangeEvent<HTMLSelectElement>) =>
-              handleChange(field.name, e.target.value),
-          })
-        )
-      } else if (field.type === 'number') {
-        formFields.push(
-          createElement('input', {
-            key: `input-${field.name}`,
-            id: fieldId,
-            type: 'number',
-            'aria-label': field.name,
-            value: (formData[field.name] as string) || '',
-            onChange: (e: ChangeEvent<HTMLInputElement>) =>
-              handleChange(field.name, e.target.value),
-          })
-        )
-      } else if (field.type === 'boolean') {
-        formFields.push(
-          createElement('input', {
-            key: `input-${field.name}`,
-            id: fieldId,
-            type: 'checkbox',
-            'aria-label': field.name,
-            checked: (formData[field.name] as boolean) || false,
-            onChange: (e: ChangeEvent<HTMLInputElement>) =>
-              handleChange(field.name, e.target.checked),
-          })
-        )
-      } else {
-        // Default: text input
-        formFields.push(
-          createElement('input', {
-            key: `input-${field.name}`,
-            id: fieldId,
-            type: 'text',
-            'aria-label': field.name,
-            value: (formData[field.name] as string) || '',
-            onChange: (e: ChangeEvent<HTMLInputElement>) =>
-              handleChange(field.name, e.target.value),
-          })
+        return (
+          <SelectInput
+            {...commonProps}
+            choices={field.options.map((opt) => ({ id: opt, name: opt }))}
+          />
         )
       }
 
+      if (field.type === 'relation') {
+        return <SelectInput {...commonProps} choices={[]} />
+      }
+
+      if (field.type === 'number') {
+        return <NumberInput {...commonProps} />
+      }
+
+      if (field.type === 'boolean') {
+        return <BooleanInput {...commonProps} />
+      }
+
+      // Default: text input
+      return <TextInput {...commonProps} />
     }
 
-    // Global error (shows "required" for validation, other errors for failures)
-    if (errors._form) {
-      formFields.push(
-        createElement('span', { key: 'form-error', className: 'error' }, errors._form)
-      )
-    }
+    return (
+      <div data-page="create" className="flex flex-col gap-4 bg-background text-foreground">
+        {/* Page header */}
+        <h1 className="text-2xl font-semibold">Create {noun.name}</h1>
 
-    // Submit button
-    formFields.push(
-      createElement(
-        'button',
-        { key: 'submit', type: 'submit', disabled: submitting },
-        submitting ? 'Creating...' : 'Create'
-      )
+        {/* SimpleForm from @mdxui/admin */}
+        <SimpleForm
+          onSubmit={handleSubmit}
+          defaultValues={formData}
+          className="space-y-4"
+        >
+          {noun.fields.map((field) => renderInput(field))}
+
+          {/* Error display */}
+          {errors._form && (
+            <span className="text-destructive text-sm">{errors._form}</span>
+          )}
+
+          {/* Form toolbar with save button */}
+          <FormToolbar>
+            <Button type="button" variant="outline" onClick={() => navigate(`/${noun.pluralName}`)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? 'Creating...' : 'Create'}
+            </Button>
+          </FormToolbar>
+        </SimpleForm>
+      </div>
     )
-
-    children.push(
-      createElement(
-        'form',
-        { key: 'form', onSubmit: handleSubmit },
-        formFields
-      )
-    )
-
-    return createElement('div', { 'data-page': 'create' }, children)
   }
 }

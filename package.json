@@ -75,10 +75,18 @@
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
-    "@mdxui/do": "workspace:*"
+    "@mdxui/do": "workspace:*",
+    "@mdxui/admin": "workspace:*",
+    "@mdxui/primitives": "workspace:*"
   },
   "peerDependenciesMeta": {
     "@mdxui/do": {
+      "optional": true
+    },
+    "@mdxui/admin": {
+      "optional": true
+    },
+    "@mdxui/primitives": {
       "optional": true
     }
   },

@@ -2,13 +2,28 @@
  * Show Page Generator
  *
  * Creates a page for viewing a single record with verb action buttons.
+ * Uses @mdxui/primitives Card for consistent admin UI.
  */
 
-import { createElement, useState, type ComponentType, type ReactNode } from 'react'
+import { useState, type ComponentType } from 'react'
 import type { ParsedNoun, AppGeneratorConfig } from '../types'
 import { useTestContext } from '../test-utils'
 import { isDestructiveVerb } from '../parser'
 import { useThing } from '../data-source'
+// @mdxui/admin components
+import { TextField, ArrayField } from '@mdxui/admin'
+// @mdxui/primitives components
+import { Button, Card, CardContent, CardHeader, CardTitle } from '@mdxui/primitives'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@mdxui/primitives'
 
 /**
  * Create a Show page component for a noun
@@ -74,126 +89,123 @@ export function createShowPage(
       return true
     }
 
-    const children: ReactNode[] = []
+    // Render field value based on type
+    const renderField = (field: ParsedNoun['fields'][0]) => {
+      if (!record) return null
+      const value = record[field.name]
 
-    // Title
-    children.push(createElement('h1', { key: 'title' }, `${noun.name} Details`))
+      if (field.type === 'relation' && field.cardinality === 'many') {
+        const related = value as Array<Record<string, unknown>> | undefined
+        if (!related || related.length === 0) return null
 
-    if (record) {
-      // Display fields
-      for (const field of noun.fields) {
-        const value = record[field.name]
-
-        if (field.type === 'relation' && field.cardinality === 'many') {
-          // Display related records
-          const related = value as Array<Record<string, unknown>> | undefined
-          if (related && related.length > 0) {
-            children.push(
-              createElement('div', { key: `field-${field.name}` }, [
-                createElement('h3', { key: 'label' }, field.name),
-                createElement(
-                  'ul',
-                  { key: 'list' },
-                  related.map((item, idx) => {
-                    // Format monetary values
-                    const displayValue = field.name === 'orders' && typeof item.total === 'number'
-                      ? `$${item.total}`
-                      : item.name || item.id
-                    // Ensure key is always a string or number
-                    const itemKey = typeof item.id === 'string' || typeof item.id === 'number' ? item.id : idx
-
-                    return createElement('li', { key: itemKey }, String(displayValue ?? ''))
-                  })
-                ),
-              ])
-            )
-          }
-        } else if (field.type === 'relation' && value && typeof value === 'object') {
-          // Single relation
-          const relatedRecord = value as Record<string, unknown>
-          children.push(
-            createElement('div', { key: `field-${field.name}` }, [
-              createElement('strong', { key: 'label' }, `${field.name}: `),
-              createElement('span', { key: 'value' }, relatedRecord.name as string || relatedRecord.id as string),
-            ])
-          )
-        } else if (value !== undefined) {
-          children.push(
-            createElement('div', { key: `field-${field.name}` }, [
-              createElement('strong', { key: 'label' }, `${field.name}: `),
-              createElement('span', { key: 'value' }, String(value)),
-            ])
-          )
-        }
-      }
-
-      // Edit button
-      children.push(
-        createElement(
-          'button',
-          {
-            key: 'edit',
-            type: 'button',
-            onClick: () => navigate(`/${noun.pluralName}/${record.id}/edit`),
-          },
-          'Edit'
-        )
-      )
-
-      // Verb action buttons
-      for (const verb of verbList) {
-        const canExecute = canExecuteVerb(verb)
-        const isAllowed = isVerbAllowed(verb)
-        const isExecuting = executingVerb === verb
-
-        // If custom checkPermission is provided, show button but maybe disabled
-        // If using user.permissions, hide button when no permission
-        if (!hasCustomPermissionCheck && !canExecute) {
-          continue // Hide button when using user.permissions and no permission
-        }
-
-        children.push(
-          createElement(
-            'button',
-            {
-              key: `verb-${verb}`,
-              type: 'button',
-              onClick: () => handleVerbClick(verb),
-              disabled: isExecuting || !isAllowed || !canExecute,
-            },
-            verb
-          )
+        return (
+          <div key={`field-${field.name}`} className="space-y-2">
+            <h3 className="text-sm font-medium text-muted-foreground">{field.name}</h3>
+            <ul className="list-disc list-inside space-y-1">
+              {related.map((item, idx) => {
+                const displayValue = field.name === 'orders' && typeof item.total === 'number'
+                  ? `$${item.total}`
+                  : item.name || item.id
+                const itemKey = typeof item.id === 'string' || typeof item.id === 'number' ? item.id : idx
+                return <li key={itemKey} className="text-sm">{String(displayValue ?? '')}</li>
+              })}
+            </ul>
+          </div>
         )
       }
+
+      if (field.type === 'relation' && value && typeof value === 'object') {
+        const relatedRecord = value as Record<string, unknown>
+        return (
+          <div key={`field-${field.name}`} className="flex justify-between py-2 border-b border-border">
+            <span className="font-medium text-muted-foreground">{field.name}</span>
+            <span>{relatedRecord.name as string || relatedRecord.id as string}</span>
+          </div>
+        )
+      }
+
+      if (value !== undefined) {
+        return (
+          <div key={`field-${field.name}`} className="flex justify-between py-2 border-b border-border">
+            <span className="font-medium text-muted-foreground">{field.name}</span>
+            <span>{String(value)}</span>
+          </div>
+        )
+      }
+
+      return null
     }
 
-    // Confirmation dialog
-    if (showConfirm) {
-      children.push(
-        createElement('div', { key: 'confirm-dialog', role: 'dialog' }, [
-          createElement('p', { key: 'message' }, `Are you sure you want to ${showConfirm} this ${noun.name.toLowerCase()}?`),
-          createElement(
-            'button',
-            {
-              key: 'confirm',
-              type: 'button',
-              onClick: () => executeVerb(showConfirm),
-            },
-            'Confirm'
-          ),
-          createElement(
-            'button',
-            {
-              key: 'cancel',
-              type: 'button',
-              onClick: () => setShowConfirm(null),
-            },
-            'Cancel'
-          ),
-        ])
-      )
-    }
+    return (
+      <div data-page="show" className="flex flex-col gap-4 bg-background text-foreground">
+        {/* Page header */}
+        <h1 className="text-2xl font-semibold">{noun.name} Details</h1>
 
-    return createElement('div', { 'data-page': 'show' }, children)
+        {record && (
+          <>
+            {/* Card from @mdxui/primitives for record details */}
+            <Card>
+              <CardHeader>
+                <CardTitle>{record.name as string || record.id as string}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {noun.fields.map((field) => renderField(field))}
+              </CardContent>
+            </Card>
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/${noun.pluralName}/${record.id}/edit`)}
+              >
+                Edit
+              </Button>
+
+              {verbList.map((verb) => {
+                const canExecute = canExecuteVerb(verb)
+                const isAllowed = isVerbAllowed(verb)
+                const isExecuting = executingVerb === verb
+
+                // If custom checkPermission is provided, show button but maybe disabled
+                // If using user.permissions, hide button when no permission
+                if (!hasCustomPermissionCheck && !canExecute) {
+                  return null
+                }
+
+                return (
+                  <Button
+                    key={`verb-${verb}`}
+                    variant="secondary"
+                    onClick={() => handleVerbClick(verb)}
+                    disabled={isExecuting || !isAllowed || !canExecute}
+                  >
+                    {verb}
+                  </Button>
+                )
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Confirmation dialog using AlertDialog from @mdxui/primitives */}
+        <AlertDialog open={!!showConfirm} onOpenChange={(open) => !open && setShowConfirm(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Action</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to {showConfirm} this {noun.name.toLowerCase()}?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setShowConfirm(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => showConfirm && executeVerb(showConfirm)}>
+                Confirm
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    )
   }
 }

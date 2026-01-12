@@ -1,13 +1,25 @@
 /**
  * List Page Generator
  *
- * Creates a list page with table, sorting, filtering, pagination, and row actions.
+ * Creates a list page with DataGrid, sorting, filtering, pagination, and row actions.
+ * Uses @mdxui/admin components for consistent admin UI.
  */
 
 import { createElement, useState, type ComponentType, type ReactNode } from 'react'
 import type { ParsedNoun, AppGeneratorConfig } from '../types'
 import { useTestContext } from '../test-utils'
 import { useListData, useThings } from '../data-source'
+// @mdxui/admin components
+import { DataGrid, FilterButton, ListPagination } from '@mdxui/admin'
+import type { DataGridColumn, SortState } from '@mdxui/admin'
+// @mdxui/primitives components
+import { Button } from '@mdxui/primitives'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@mdxui/primitives'
 
 /**
  * Create a List page component for a noun
@@ -20,7 +32,8 @@ export function createListPage(
   return function ListPage() {
     const ctx = useTestContext()
     const { data, navigate, onSort, user, checkPermission: _checkPermission, verbs: verbHandlers } = ctx
-    const [openActionsMenu, setOpenActionsMenu] = useState<string | null>(null)
+    const [selectedIds, setSelectedIds] = useState<(string | number)[]>([])
+    const [sort, setSort] = useState<SortState | undefined>(undefined)
 
     // Call @mdxui/do hook for data fetching (tracked by tests)
     useThings({ type: noun.name })
@@ -35,143 +48,110 @@ export function createListPage(
     const totalCount = nounData?.totalCount || 0
     const hasMore = nounData?.hasMore || false
 
-    const children: ReactNode[] = []
-
-    // Title
-    children.push(createElement('h1', { key: 'title' }, noun.pluralName))
-
-    // Create button
-    const canCreate = !user?.permissions || user.permissions.includes(`${noun.pluralName}.create`)
-    children.push(
-      createElement(
-        'button',
-        {
-          key: 'create-btn',
-          type: 'button',
-          onClick: () => navigate(`/${noun.pluralName}/new`),
-          disabled: !canCreate,
-        },
-        'Create'
-      )
-    )
-
-    // Filter button
-    children.push(
-      createElement(
-        'button',
-        { key: 'filter-btn', type: 'button' },
-        'Filter'
-      )
-    )
-
-    // Table header
-    const headerCells: ReactNode[] = noun.fields
+    // Build DataGrid columns from noun fields
+    const columns: DataGridColumn<Record<string, unknown>>[] = noun.fields
       .filter((f) => f.type !== 'relation' || f.cardinality === 'one')
-      .map((field) =>
-        createElement(
-          'th',
-          {
-            key: field.name,
-            onClick: () => {
-              if (onSort) {
-                onSort({ field: field.name, direction: 'asc' })
-              }
-            },
-            style: { cursor: 'pointer' },
-          },
-          field.name
-        )
-      )
-    headerCells.push(createElement('th', { key: 'actions' }, 'Actions'))
+      .map((field) => ({
+        source: field.name,
+        label: field.name,
+        sortable: true,
+      }))
 
-    const thead = createElement('thead', { key: 'thead' }, createElement('tr', null, headerCells))
-
-    // Table body
-    const rows = records.map((record, index) => {
-      const cells = noun.fields
-        .filter((f) => f.type !== 'relation' || f.cardinality === 'one')
-        .map((field) =>
-          createElement('td', { key: field.name }, String(record[field.name] ?? ''))
-        )
-
-      // Row actions
-      cells.push(
-        createElement('td', { key: 'actions' }, [
-          createElement(
-            'button',
-            {
-              key: 'actions-menu',
-              type: 'button',
-              'data-testid': `row-actions-${record.id}`,
-              onClick: () => setOpenActionsMenu(openActionsMenu === record.id ? null : record.id as string),
-            },
-            'Actions'
-          ),
-          openActionsMenu === record.id &&
-            createElement('div', { key: 'menu', role: 'menu' }, [
-              createElement(
-                'button',
-                {
-                  key: 'view',
-                  role: 'menuitem',
-                  onClick: () => navigate(`/${noun.pluralName}/${record.id}`),
-                },
-                'View'
-              ),
-              createElement(
-                'button',
-                {
-                  key: 'edit',
-                  role: 'menuitem',
-                  onClick: () => navigate(`/${noun.pluralName}/${record.id}/edit`),
-                },
-                'Edit'
-              ),
-              createElement(
-                'button',
-                { key: 'delete', role: 'menuitem' },
-                'Delete'
-              ),
-              // Verb menu items
-              ...verbList.map((verb) =>
-                createElement(
-                  'button',
-                  {
-                    key: verb,
-                    role: 'menuitem',
-                    onClick: async () => {
-                      const handler = verbHandlers?.[noun.name]?.[verb]
-                      if (handler) {
-                        await handler({ id: record.id, ...record })
-                      }
-                    },
-                  },
-                  verb
-                )
-              ),
-            ]),
-        ])
-      )
-
-      // Use index as suffix to ensure uniqueness even with duplicate record IDs
-      return createElement('tr', { key: `${record.id}-${index}` }, cells)
+    // Add actions column
+    columns.push({
+      source: '_actions',
+      label: 'Actions',
+      render: (record) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              data-testid={`row-actions-${record.id}`}
+            >
+              Actions
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => navigate(`/${noun.pluralName}/${record.id}`)}>
+              View
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate(`/${noun.pluralName}/${record.id}/edit`)}>
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem>Delete</DropdownMenuItem>
+            {verbList.map((verb) => (
+              <DropdownMenuItem
+                key={verb}
+                onClick={async () => {
+                  const handler = verbHandlers?.[noun.name]?.[verb]
+                  if (handler) {
+                    await handler({ id: record.id, ...record })
+                  }
+                }}
+              >
+                {verb}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
     })
 
-    const tbody = createElement('tbody', { key: 'tbody' }, rows)
-    const table = createElement('table', { key: 'table' }, [thead, tbody])
-    children.push(table)
-
-    // Pagination
-    if (totalCount > 0) {
-      children.push(
-        createElement('div', { key: 'pagination' }, [
-          createElement('span', { key: 'count' }, `1 of ${totalCount}`),
-          hasMore &&
-            createElement('button', { key: 'next', type: 'button' }, 'Next'),
-        ])
-      )
+    // Handle sort changes
+    const handleSortChange = (newSort: SortState | undefined) => {
+      setSort(newSort)
+      if (onSort && newSort) {
+        onSort({ field: newSort.field, direction: newSort.direction })
+      }
     }
 
-    return createElement('div', { 'data-page': 'list' }, children)
+    // Permission check for create
+    const canCreate = !user?.permissions || user.permissions.includes(`${noun.pluralName}.create`)
+
+    return (
+      <div data-page="list" className="flex flex-col gap-4 bg-background text-foreground">
+        {/* Page header */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">{noun.pluralName}</h1>
+          <div className="flex items-center gap-2">
+            <FilterButton />
+            <Button
+              onClick={() => navigate(`/${noun.pluralName}/new`)}
+              disabled={!canCreate}
+            >
+              Create
+            </Button>
+          </div>
+        </div>
+
+        {/* DataGrid from @mdxui/admin */}
+        <DataGrid
+          data={records}
+          columns={columns}
+          selectable
+          selectedIds={selectedIds}
+          onSelect={setSelectedIds}
+          onRowClick={(record) => navigate(`/${noun.pluralName}/${record.id}`)}
+          sort={sort}
+          onSort={handleSortChange}
+          rowKey="id"
+        />
+
+        {/* Pagination */}
+        {totalCount > 0 && (
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
+              1 of {totalCount}
+            </span>
+            {hasMore && (
+              <Button variant="outline" size="sm">
+                Next
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    )
   }
 }
