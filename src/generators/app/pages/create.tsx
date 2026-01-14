@@ -81,38 +81,73 @@ export function createCreatePage(
 
     // Render input component based on field type
     const renderInput = (field: ParsedNoun['fields'][0]) => {
-      const commonProps = {
-        key: `input-${field.name}`,
-        source: field.name,
-        label: field.name,
-        value: formData[field.name],
-        onChange: (value: unknown) => handleChange(field.name, value),
-        required: !field.optional,
-      }
+      const value = formData[field.name]
 
       if (field.type === 'union' && field.options) {
         return (
           <SelectInput
-            {...commonProps}
+            key={`input-${field.name}`}
+            source={field.name}
+            label={field.name}
+            value={value as string | number | undefined}
+            onChange={(v) => handleChange(field.name, v)}
+            required={!field.optional}
             choices={field.options.map((opt) => ({ id: opt, name: opt }))}
           />
         )
       }
 
       if (field.type === 'relation') {
-        return <SelectInput {...commonProps} choices={[]} />
+        return (
+          <SelectInput
+            key={`input-${field.name}`}
+            source={field.name}
+            label={field.name}
+            value={value as string | number | undefined}
+            onChange={(v) => handleChange(field.name, v)}
+            required={!field.optional}
+            choices={[]}
+          />
+        )
       }
 
       if (field.type === 'number') {
-        return <NumberInput {...commonProps} />
+        return (
+          <NumberInput
+            key={`input-${field.name}`}
+            source={field.name}
+            label={field.name}
+            value={value as number | '' | undefined}
+            onChange={(v) => handleChange(field.name, v)}
+            required={!field.optional}
+          />
+        )
       }
 
       if (field.type === 'boolean') {
-        return <BooleanInput {...commonProps} />
+        return (
+          <BooleanInput
+            key={`input-${field.name}`}
+            source={field.name}
+            label={field.name}
+            value={value as boolean | undefined}
+            onChange={(v) => handleChange(field.name, v)}
+            required={!field.optional}
+          />
+        )
       }
 
       // Default: text input
-      return <TextInput {...commonProps} />
+      return (
+        <TextInput
+          key={`input-${field.name}`}
+          source={field.name}
+          label={field.name}
+          value={value as string | undefined}
+          onChange={(v) => handleChange(field.name, v)}
+          required={!field.optional}
+        />
+      )
     }
 
     return (

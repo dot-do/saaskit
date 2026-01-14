@@ -10,8 +10,8 @@ import type { ParsedNoun, AppGeneratorConfig } from '../types'
 import { useTestContext } from '../test-utils'
 import { isDestructiveVerb } from '../parser'
 import { useThing } from '../data-source'
-// @mdxui/admin components
-import { TextField, ArrayField } from '@mdxui/admin'
+// @mdxui/admin components - reserved for future field components
+// import { TextField, ArrayField } from '@mdxui/admin'
 // @mdxui/primitives components
 import { Button, Card, CardContent, CardHeader, CardTitle } from '@mdxui/primitives'
 import {

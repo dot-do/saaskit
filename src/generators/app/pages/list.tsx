@@ -5,12 +5,12 @@
  * Uses @mdxui/admin components for consistent admin UI.
  */
 
-import { createElement, useState, type ComponentType, type ReactNode } from 'react'
+import { useState, type ComponentType } from 'react'
 import type { ParsedNoun, AppGeneratorConfig } from '../types'
 import { useTestContext } from '../test-utils'
-import { useListData, useThings } from '../data-source'
+import { useThings } from '../data-source'
 // @mdxui/admin components
-import { DataGrid, FilterButton, ListPagination } from '@mdxui/admin'
+import { DataGrid, FilterButton } from '@mdxui/admin'
 import type { DataGridColumn, SortState } from '@mdxui/admin'
 // @mdxui/primitives components
 import { Button } from '@mdxui/primitives'
@@ -115,7 +115,11 @@ export function createListPage(
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold">{noun.pluralName}</h1>
           <div className="flex items-center gap-2">
-            <FilterButton />
+            <FilterButton>
+              <div className="p-2 text-sm text-muted-foreground">
+                Filter form coming soon
+              </div>
+            </FilterButton>
             <Button
               onClick={() => navigate(`/${noun.pluralName}/new`)}
               disabled={!canCreate}
