@@ -221,9 +221,11 @@ export function createAccessor<T extends BaseRecord>(
       // Clone to avoid external mutations
       let result = { ...record } as T
 
-      // Resolve relations if hook provided and options.include specified
-      if (hooks.resolveRelations && options?.include?.length) {
-        result = await hooks.resolveRelations(result, options, hookContext)
+      // Resolve relations if hook provided
+      // When options.include is specified, resolve only those relations
+      // When options.include is not specified, auto-resolve all relationships
+      if (hooks.resolveRelations) {
+        result = await hooks.resolveRelations(result, options || {}, hookContext)
       }
 
       return result
@@ -371,7 +373,16 @@ const RELATIONSHIP_OPERATORS = ['->', '~>', '<-', '<~'] as const
 type RelOp = (typeof RELATIONSHIP_OPERATORS)[number]
 
 /**
+ * Pattern to detect invalid relationship operators
+ * Valid: ->, ~>, <-, <~
+ * Invalid: >>, <<, >, <, =>>, etc.
+ */
+const INVALID_OPERATOR_PATTERN = /^(?:>>|<<|=>|<=|>|<(?![~-])|<[^~-]|~(?!>)|->(?!.)|<-(?!.)|~>(?!.)|<~(?!.))/
+
+/**
  * Parse a field definition to extract relationship information
+ *
+ * @throws {Error} If the field looks like a relationship operator but isn't valid
  */
 export function parseFieldDefinition(field: string | [string]): {
   isRelationship: boolean
@@ -388,13 +399,24 @@ export function parseFieldDefinition(field: string | [string]): {
   // Check for relationship operators
   for (const op of RELATIONSHIP_OPERATORS) {
     if (field.startsWith(op)) {
+      const target = field.slice(op.length)
+      if (!target) {
+        throw new Error(`Invalid relationship operator: "${field}" - missing target noun`)
+      }
       return {
         isRelationship: true,
         operator: op,
-        targetNoun: field.slice(op.length),
+        targetNoun: target,
         isArray: false,
       }
     }
+  }
+
+  // Check for invalid relationship-like operators
+  if (INVALID_OPERATOR_PATTERN.test(field)) {
+    throw new Error(
+      `Invalid relationship operator in: "${field}". Valid operators are: ->, <-, ~>, <~`
+    )
   }
 
   return { isRelationship: false, isArray: false }
@@ -403,41 +425,72 @@ export function parseFieldDefinition(field: string | [string]): {
 /**
  * Create a relation resolver hook for backward relationships
  *
- * Resolves `<-` backward relationships by finding records in the target
- * noun that reference the current record.
+ * Resolves relationships automatically:
+ * - Forward (`->`, `~>`): Look up by stored ID
+ * - Backward (`<-`, `<~`): Find referencing records in target noun
+ * - Array relationships (`['->', ...]`): Resolve each ID in the array
+ *
+ * When `include` option is provided, only resolves specified relations.
+ * When `include` is not provided, auto-resolves ALL relationships in schema.
  */
 export function createRelationResolver<T extends BaseRecord>(
   allDefinitions: NounDefinitions,
   allStorage: Map<string, Map<string, BaseRecord>>
 ): NonNullable<AccessorHooks<T>['resolveRelations']> {
   return (record, options, context) => {
-    if (!options.include?.length || !context.schema) {
+    if (!context.schema) {
       return record
     }
 
     const result: Record<string, unknown> = { ...(record as object) }
     const nounName = context.nounName
 
-    for (const relationName of options.include) {
+    // If include is specified, only resolve those relations.
+    // Otherwise, auto-resolve all relationships in the schema.
+    const relationNames = options.include?.length
+      ? options.include
+      : Object.keys(context.schema)
+
+    for (const relationName of relationNames) {
       const fieldDef = context.schema[relationName]
       if (!fieldDef) continue
 
       const parsed = parseFieldDefinition(fieldDef)
+      if (!parsed.isRelationship || !parsed.targetNoun) continue
 
-      // Forward relationship (->): look up by stored ID
-      if (parsed.isRelationship && parsed.operator === '->' && parsed.targetNoun) {
-        const relationId = (record as Record<string, unknown>)[relationName]
-        if (typeof relationId === 'string') {
-          const targetStorage = allStorage.get(parsed.targetNoun)
-          const related = targetStorage?.get(relationId)
-          if (related) {
-            result[relationName] = { ...related, id: relationId }
+      // Forward relationship (-> or ~>): look up by stored ID
+      if ((parsed.operator === '->' || parsed.operator === '~>')) {
+        if (parsed.isArray) {
+          // Array of forward relationships: ['->Product']
+          const relationIds = (record as Record<string, unknown>)[relationName]
+          if (Array.isArray(relationIds)) {
+            const targetStorage = allStorage.get(parsed.targetNoun)
+            const resolvedItems: BaseRecord[] = []
+            for (const relId of relationIds) {
+              if (typeof relId === 'string') {
+                const related = targetStorage?.get(relId)
+                if (related) {
+                  resolvedItems.push({ ...related, id: relId })
+                }
+              }
+            }
+            result[relationName] = resolvedItems
+          }
+        } else {
+          // Single forward relationship: '->Customer'
+          const relationId = (record as Record<string, unknown>)[relationName]
+          if (typeof relationId === 'string') {
+            const targetStorage = allStorage.get(parsed.targetNoun)
+            const related = targetStorage?.get(relationId)
+            if (related) {
+              result[relationName] = { ...related, id: relationId }
+            }
           }
         }
       }
 
-      // Backward relationship (<-): find referencing records
-      if (parsed.isRelationship && parsed.operator === '<-' && parsed.targetNoun) {
+      // Backward relationship (<- or <~): find referencing records
+      if ((parsed.operator === '<-' || parsed.operator === '<~')) {
         const targetStorage = allStorage.get(parsed.targetNoun)
         if (targetStorage) {
           const relatedRecords: BaseRecord[] = []
@@ -449,7 +502,7 @@ export function createRelationResolver<T extends BaseRecord>(
               const targetParsed = parseFieldDefinition(targetFieldDef)
               if (
                 targetParsed.isRelationship &&
-                targetParsed.operator === '->' &&
+                (targetParsed.operator === '->' || targetParsed.operator === '~>') &&
                 targetParsed.targetNoun === nounName
               ) {
                 if ((targetRecord as Record<string, unknown>)[targetField] === record.id) {
