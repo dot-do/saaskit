@@ -61,6 +61,8 @@
     "clean": "rm -rf .turbo node_modules dist"
   },
   "devDependencies": {
+    "@mdxui/admin": "workspace:*",
+    "@mdxui/primitives": "workspace:*",
     "@mdxui/typescript-config": "workspace:*",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.1",
