@@ -24,13 +24,14 @@ export type ContextWithNouns<TNouns extends NounDefinitions> = Context<TNouns> &
 }
 
 // CRUD accessor for a noun (mongo-style)
+// Uses permissive types for data/query to allow dynamic property access in action handlers
 export interface NounAccessor<T extends NounDefinition> {
-  create: (data: Partial<InferNounData<T>>) => Promise<InferNounData<T>>
-  get: (id: string) => Promise<InferNounData<T> | null>
-  update: (id: string, data: Partial<InferNounData<T>>) => Promise<InferNounData<T>>
+  create: (data: Record<string, unknown>) => Promise<InferNounData<T> & Record<string, unknown>>
+  get: (id: string) => Promise<(InferNounData<T> & Record<string, unknown>) | null>
+  update: (id: string, data: Record<string, unknown>) => Promise<InferNounData<T> & Record<string, unknown>>
   delete: (id: string) => Promise<void>
-  find: (query: Query<InferNounData<T>>) => Promise<InferNounData<T>[]>
-  findOne: (query: Query<InferNounData<T>>) => Promise<InferNounData<T> | null>
+  find: (query: Record<string, unknown>) => Promise<(InferNounData<T> & Record<string, unknown>)[]>
+  findOne: (query: Record<string, unknown>) => Promise<(InferNounData<T> & Record<string, unknown>) | null>
 }
 
 // Mongo-style query
