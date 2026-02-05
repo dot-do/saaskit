@@ -34,6 +34,9 @@
     "events"
   ],
   "license": "MIT",
+  "dependencies": {
+    "verbs.org.ai": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "^5.9.3",
     "vitest": "^2.0.0"

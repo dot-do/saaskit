@@ -48,8 +48,7 @@ import type { ActionFn, EventFn, NounDefinition, NounDefinitions, ParsedNoun, Pa
 export * from './types'
 
 // Re-export verb conjugation from verbs.org.ai
-// TODO: Once package resolution is set up, import from 'verbs.org.ai'
-export { toEvent, toActivity, toInverse, isPastTense, conjugate } from './verbs'
+export { toEvent, toActivity, toInverse, isPastTense, conjugate } from 'verbs.org.ai'
 
 /**
  * Create a headless SaaS app
@@ -78,7 +77,7 @@ export function SaaS<TNouns extends NounDefinitions>(name: string, nouns: TNouns
 }
 
 // Import verb functions for internal use
-import { toEvent, isPastTense } from './verbs'
+import { toEvent, isPastTense } from 'verbs.org.ai'
 
 /**
  * Parse a noun definition into properties, relations, actions, events, and blocked
