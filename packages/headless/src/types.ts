@@ -12,8 +12,8 @@ export interface Context<TNouns extends NounDefinitions = NounDefinitions> {
   args: Record<string, unknown>
   // Current actor/user
   actor?: { id: string; type: string }
-  // Emit an event
-  emit: (event: string, data: unknown) => void
+  // Emit an event (returns any to support request/response patterns)
+  emit: (event: string, data: unknown) => any
   // Schedule a workflow
   schedule: (workflow: string, data: unknown, options?: { delay?: number }) => void
 }
@@ -23,15 +23,24 @@ export type ContextWithNouns<TNouns extends NounDefinitions> = Context<TNouns> &
   [K in keyof TNouns]: NounAccessor<TNouns[K]>
 }
 
+// Noun data shape — InferNounData with permissive index for dynamic property access
+export type NounData<T extends NounDefinition> = InferNounData<T> & EntityBase
+
 // CRUD accessor for a noun (mongo-style)
-// Uses permissive types for data/query to allow dynamic property access in action handlers
+// Returns NounData (typed properties + EntityBase index signature) so property access never needs `as any`
+// Index signature allows custom actions, queries, and dynamic property access on nouns
 export interface NounAccessor<T extends NounDefinition> {
-  create: (data: Record<string, unknown>) => Promise<InferNounData<T> & Record<string, unknown>>
-  get: (id: string) => Promise<(InferNounData<T> & Record<string, unknown>) | null>
-  update: (id: string, data: Record<string, unknown>) => Promise<InferNounData<T> & Record<string, unknown>>
+  create: (data: Record<string, unknown>) => Promise<NounData<T>>
+  get: (id: string) => Promise<NounData<T> | null>
+  update: (id: string, data: Record<string, unknown>) => Promise<NounData<T>>
   delete: (id: string) => Promise<void>
-  find: (query: Record<string, unknown>) => Promise<(InferNounData<T> & Record<string, unknown>)[]>
-  findOne: (query: Record<string, unknown>) => Promise<(InferNounData<T> & Record<string, unknown>) | null>
+  find: (query: Record<string, unknown>) => Promise<NounData<T>[]>
+  findOne: (query: Record<string, unknown>) => Promise<NounData<T> | null>
+  list: (options?: Record<string, unknown>) => Promise<NounData<T>[]>
+  query: (query: Record<string, unknown>) => Promise<NounData<T>[]>
+  search: (query: string) => Promise<NounData<T>[]>
+  // Allow custom actions and dynamic property access (e.g., $.Product.adjustInventory, $.Cart.clear)
+  [key: string]: any
 }
 
 // Mongo-style query
@@ -55,9 +64,19 @@ export type FuzzyForward = `~> ${string}`
 export type FuzzyBackward = `<~ ${string}`
 export type RelationDef = ForwardRelation | BackwardRelation | FuzzyForward | FuzzyBackward
 
+// Entity data base shape — every entity has at least these meta fields
+export interface EntityBase {
+  id: string
+  $type: string
+  $createdAt: number
+  $updatedAt: number
+  [key: string]: any
+}
+
 // Function types
-export type ActionFn<TNouns extends NounDefinitions = NounDefinitions> = (target: unknown, $: ContextWithNouns<TNouns>) => unknown | Promise<unknown>
-export type EventFn<TNouns extends NounDefinitions = NounDefinitions> = (data: unknown, $: ContextWithNouns<TNouns>) => void | Promise<void>
+// Target is EntityBase (meta fields + any property access) so handlers never need `as any`
+export type ActionFn<TNouns extends NounDefinitions = NounDefinitions> = (target: EntityBase, $: ContextWithNouns<TNouns>) => unknown | Promise<unknown>
+export type EventFn<TNouns extends NounDefinitions = NounDefinitions> = (data: EntityBase, $: ContextWithNouns<TNouns>) => void | Promise<void>
 
 // A noun definition - properties are strings, actions/events are functions, null blocks
 export type NounDefinition = {
