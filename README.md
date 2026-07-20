@@ -988,7 +988,7 @@ SaaSkit sits at the **generation layer** - it takes DSL definitions (Nouns + Ver
 | Output | Using |
 |--------|-------|
 | **App** | React components (raw + @mdxui/cockpit) |
-| **Site** | @mdxui/neo section components |
+| **Site** | @mdxui/neo section components (target; @mdxui/beacon literals pending migration) |
 | **API** | Self-contained REST/GraphQL/WebSocket |
 | **Docs** | MDX documentation |
 | **CLI** | Command-line interface |
