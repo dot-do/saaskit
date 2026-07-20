@@ -25,7 +25,7 @@ SaaSkit derives multiple artifacts from a single noun/verb schema:
 |--------|-------------|----------------|
 | **App** | React admin dashboard | Uses `@mdxui/admin` components |
 | **API** | REST + GraphQL + WebSocket | Pure TypeScript (no UI deps) |
-| **Site** | Landing page | Uses `@mdxui/beacon` |
+| **Site** | Landing page | Uses `@mdxui/neo` (sections) + `@mdxui/blocks` (block data) |
 | **Docs** | API reference | Uses Fumadocs |
 | **CLI** | Command-line interface | Pure TypeScript |
 | **MCP** | Model Context Protocol server | Pure TypeScript |
@@ -215,7 +215,7 @@ interface UseResourceResult<T> {
 | Admin UI components | `@mdxui/admin` |
 | App shell/layout | `@mdxui/app` |
 | Base primitives | `@mdxui/primitives` |
-| Landing pages | `@mdxui/beacon` |
+| Landing pages | `@mdxui/neo` + `@mdxui/blocks` |
 | Backend integration | `@dotdo/react` |
 | Data fetching patterns | `@mdxui/app/hooks` |
 

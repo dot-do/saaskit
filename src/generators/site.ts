@@ -2,7 +2,10 @@
  * Site Generator - Marketing Landing Page Generation
  *
  * Generates a marketing landing page from the app definition.
- * Uses @mdxui/beacon components for the UI.
+ * Uses @mdxui/neo section components for the UI.
+ * (@mdxui/beacon is deprecated — superseded by @mdxui/neo + @mdxui/blocks;
+ * the '@mdxui/beacon' componentSource string literals below are code, left
+ * for a follow-up migration. See SG-7 ruling, 2026-07-19.)
  */
 
 import type { AppConfig, ResolvedApp } from '../types'

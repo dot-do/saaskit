@@ -51,7 +51,7 @@ export interface SiteSection {
 
   /**
    * Package source for the component
-   * @example '@mdxui/beacon'
+   * @example '@mdxui/neo'
    */
   componentSource?: string
 

@@ -3,7 +3,7 @@
  *
  * Individual section generators for each landing page component.
  * Each generator creates a SiteSection with content and props
- * suitable for @mdxui/beacon components.
+ * suitable for @mdxui/neo section components.
  *
  * @packageDocumentation
  */
